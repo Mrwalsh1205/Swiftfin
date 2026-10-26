@@ -23,6 +23,7 @@ enum VideoPlayerActionButton: String, CaseIterable, Displayable, Equatable, Iden
     #if os(iOS)
     case gestureLock
     case playbackDestination
+    case captureThumbnail
     #endif
     case subtitleOffset
 
@@ -53,6 +54,8 @@ enum VideoPlayerActionButton: String, CaseIterable, Displayable, Equatable, Iden
             L10n.gestureLock
         case .playbackDestination:
             L10n.cast
+        case .captureThumbnail:
+            L10n.captureThumbnail
         #endif
         case .subtitleOffset:
             L10n.subtitleOffset
@@ -113,6 +116,7 @@ enum VideoPlayerActionButton: String, CaseIterable, Displayable, Equatable, Iden
         case .playPreviousItem: usesLiquidGlassSymbols ? "backward.end.fill" : "backward.end.circle.fill"
         case .subtitles: "captions.bubble.fill"
         case .subtitleOffset: "textformat.abc"
+        case .captureThumbnail: "camera.viewfinder"
         }
     }
 
@@ -164,13 +168,19 @@ enum VideoPlayerActionButton: String, CaseIterable, Displayable, Equatable, Iden
         return buttons
     }()
 
-    static let defaultMenuActionButtons: [VideoPlayerActionButton] = [
-        .audio,
-        .audioOffset,
-        .subtitles,
-        .subtitleOffset,
-        .playbackSpeed,
-        .pictureInPicture,
-        .playbackSettings,
-    ].filter { supportedCases.contains($0) }
+    static let defaultMenuActionButtons: [VideoPlayerActionButton] = {
+        var buttons: [VideoPlayerActionButton] = [
+            .audio,
+            .audioOffset,
+            .subtitles,
+            .subtitleOffset,
+            .playbackSpeed,
+            .pictureInPicture,
+            .playbackSettings,
+        ]
+        #if os(iOS)
+        buttons.append(.captureThumbnail)
+        #endif
+        return buttons.filter { VideoPlayerActionButton.supportedCases.contains($0) }
+    }()
 }

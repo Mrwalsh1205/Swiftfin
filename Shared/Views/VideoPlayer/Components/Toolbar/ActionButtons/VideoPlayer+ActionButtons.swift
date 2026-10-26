@@ -87,6 +87,12 @@ extension VideoPlayer.PlaybackControls.Toolbar {
                 filteredButtons.removeAll { $0 == .playbackSettings }
             }
 
+            #if os(iOS)
+            if !mediaSession.item.canChangeThumbnail || !(mediaSession.player is MediaPlayerFrameCapturing) {
+                filteredButtons.removeAll(equalTo: .captureThumbnail)
+            }
+            #endif
+
             return filteredButtons
         }
 
@@ -138,6 +144,8 @@ extension VideoPlayer.PlaybackControls.Toolbar {
                 GestureLock()
             case .playbackDestination:
                 PlaybackDestination()
+            case .captureThumbnail:
+                CaptureThumbnail()
             #endif
             case .subtitleOffset:
                 SubtitleOffset()

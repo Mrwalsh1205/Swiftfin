@@ -93,6 +93,7 @@ extension Defaults.Keys {
     static let signOutOnClose: Key<Bool> = AppKey("signOutOnClose", default: false)
 
     static let posterCacheSizeLimit: Key<PosterCacheSizeLimit> = AppKey("posterCacheSizeLimit", default: .fiveGB)
+    static let thumbnailUploadQuality: Key<ThumbnailUploadQuality> = AppKey("thumbnailUploadQuality", default: .medium)
 
     /// Bumped whenever folder preview picks change, so showing folders restart their rotation.
     static let folderPreviewGeneration: Key<Int> = AppKey("folderPreviewGeneration", default: 0)

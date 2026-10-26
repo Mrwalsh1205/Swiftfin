@@ -86,6 +86,13 @@ protocol MediaPlayerOffsetProviding {
 }
 
 @MainActor
+protocol MediaPlayerFrameCapturing {
+
+    /// Captures the video frame on screen: video only, without subtitles or player controls.
+    func captureCurrentFrame() async throws -> UIImage
+}
+
+@MainActor
 protocol MediaPlayerSecondarySubtitleProviding {
 
     func setSecondarySubtitle(_ index: Int?)

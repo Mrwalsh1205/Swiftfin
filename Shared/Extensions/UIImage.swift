@@ -10,7 +10,7 @@ import UIKit
 
 extension UIImage {
 
-    func data(maxSize: Int? = 30_000_000) throws -> (data: Data, contentType: String) {
+    func data(maxSize: Int? = 30_000_000, compressionQuality: CGFloat = 1) throws -> (data: Data, contentType: String) {
         let hasAlpha = cgImage.map {
             [.alphaOnly, .first, .last, .premultipliedFirst, .premultipliedLast].contains($0.alphaInfo)
         } == true
@@ -28,11 +28,38 @@ extension UIImage {
         if hasAlpha, let pngData = pngData() {
             try validate(pngData)
             return (pngData, "image/png")
-        } else if let jpgData = jpegData(compressionQuality: 1) {
+        } else if let jpgData = jpegData(compressionQuality: compressionQuality) {
             try validate(jpgData)
             return (jpgData, "image/jpeg")
         } else {
             throw ErrorMessage(L10n.unknownError)
+        }
+    }
+
+    /// Redraws the image without transparency at one pixel per point,
+    /// scaled down so its long side is at most `maxPixelLength` pixels.
+    ///
+    /// The result has no alpha channel, so `data(maxSize:compressionQuality:)` encodes it as JPEG.
+    func opaqueResized(maxPixelLength: CGFloat) -> UIImage {
+        let pixelWidth = size.width * scale
+        let pixelHeight = size.height * scale
+        let longSide = max(pixelWidth, pixelHeight)
+
+        guard longSide > 0 else { return self }
+
+        let factor = min(1, maxPixelLength / longSide)
+        let targetSize = CGSize(
+            width: max(1, (pixelWidth * factor).rounded()),
+            height: max(1, (pixelHeight * factor).rounded())
+        )
+
+        let format = UIGraphicsImageRendererFormat()
+        format.opaque = true
+        format.preferredRange = .standard
+        format.scale = 1
+
+        return UIGraphicsImageRenderer(size: targetSize, format: format).image { _ in
+            draw(in: CGRect(origin: .zero, size: targetSize))
         }
     }
 

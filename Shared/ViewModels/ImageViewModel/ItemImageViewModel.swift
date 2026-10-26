@@ -22,6 +22,7 @@ final class ItemImageViewModel: ViewModel {
         case saveRemoteImage(RemoteImageInfo)
         case uploadFile(file: URL, type: ImageType)
         case uploadImage(image: UIImage, type: ImageType)
+        case uploadThumbnail(image: UIImage, compressionQuality: CGFloat)
 
         var transition: Transition {
             switch self {
@@ -29,7 +30,7 @@ final class ItemImageViewModel: ViewModel {
                 .to(.initial, then: .content)
             case .deleteImage:
                 .background(.deleting)
-            case .saveRemoteImage, .uploadFile, .uploadImage:
+            case .saveRemoteImage, .uploadFile, .uploadImage, .uploadThumbnail:
                 .background(.updating)
             }
         }
@@ -53,6 +54,9 @@ final class ItemImageViewModel: ViewModel {
         case content
         case error
     }
+
+    /// Folder previews listen for this to show an item's new primary image without picking new videos.
+    private static let primaryImageDidChange = Notification.Name("org.jellyfin.swiftfin.primaryImageDidChange")
 
     @SharedBaseItem
     var item: BaseItemDto
@@ -88,6 +92,38 @@ final class ItemImageViewModel: ViewModel {
         try await upload(imageData: imageData, imageType: type, contentType: contentType)
         try await _refresh()
         events.send(.updated)
+    }
+
+    /// Uploads a video frame as the primary image, scaled down and encoded as JPEG.
+    @Function(\Action.Cases.uploadThumbnail)
+    private func _uploadThumbnail(_ image: UIImage, _ compressionQuality: CGFloat) async throws {
+        let frame = image.opaqueResized(maxPixelLength: ThumbnailUploadQuality.maxPixelLength)
+        let (imageData, contentType) = try frame.data(compressionQuality: compressionQuality)
+        try await upload(imageData: imageData, imageType: .primary, contentType: contentType)
+
+        // The upload succeeded, so a failed refresh is not reported as an error.
+        // Refreshing the shared item gives every poster of it the new image tag.
+        if let entry = try? await requireUserSession().getFullItem(item) {
+            $item = entry
+        }
+
+        try? await _refresh()
+
+        postPrimaryImageDidChange()
+        events.send(.updated)
+    }
+
+    private func postPrimaryImageDidChange() {
+        let primaryImage = images[.primary]?.first
+
+        guard let itemID = item.id,
+              let imageTag = item.imageTags?[ImageType.primary.rawValue] ?? primaryImage?.imageTag
+        else { return }
+
+        var userInfo = ["itemID": itemID, "imageTag": imageTag]
+        userInfo["blurHash"] = item.imageBlurHashes?.primary?[imageTag] ?? primaryImage?.blurHash
+
+        NotificationCenter.default.post(name: Self.primaryImageDidChange, object: nil, userInfo: userInfo)
     }
 
     @Function(\Action.Cases.uploadFile)

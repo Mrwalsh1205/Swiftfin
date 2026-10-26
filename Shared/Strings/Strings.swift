@@ -288,6 +288,8 @@ internal enum L10n {
   internal static let captionStyleSettings = L10n.tr("Localizable", "captionStyleSettings", fallback: "Open caption style settings")
   /// Manage caption appearance in Settings > Accessibility > Subtitles & Captioning.
   internal static let captionStyleSettingsDescription = L10n.tr("Localizable", "captionStyleSettingsDescription", fallback: "Manage caption appearance in Settings > Accessibility > Subtitles & Captioning.")
+  /// Capture thumbnail
+  internal static let captureThumbnail = L10n.tr("Localizable", "captureThumbnail", fallback: "Capture thumbnail")
   /// Cast & crew
   internal static let castAndCrew = L10n.tr("Localizable", "castAndCrew", fallback: "Cast & crew")
   /// Category
@@ -296,6 +298,8 @@ internal enum L10n {
   internal static let cellular = L10n.tr("Localizable", "cellular", fallback: "Cellular")
   /// Change pin
   internal static let changePin = L10n.tr("Localizable", "changePin", fallback: "Change pin")
+  /// Change thumbnail
+  internal static let changeThumbnail = L10n.tr("Localizable", "changeThumbnail", fallback: "Change thumbnail")
   /// Channel
   internal static let channel = L10n.tr("Localizable", "channel", fallback: "Channel")
   /// Channel folder item
@@ -782,6 +786,12 @@ internal enum L10n {
   internal static let format = L10n.tr("Localizable", "format", fallback: "Format")
   /// 3D format
   internal static let format3D = L10n.tr("Localizable", "format3D", fallback: "3D format")
+  /// Couldn't capture this frame.
+  internal static let frameCaptureFailed = L10n.tr("Localizable", "frameCaptureFailed", fallback: "Couldn't capture this frame.")
+  /// MPV couldn't capture this frame. In Settings, set Video player > Player to AVPlayer and try again.
+  internal static let frameCaptureFailedMPV = L10n.tr("Localizable", "frameCaptureFailedMPV", fallback: "MPV couldn't capture this frame. In Settings, set Video player > Player to AVPlayer and try again.")
+  /// Couldn't grab a frame here, usually because the phone can't read this file type (for example MKV, AVI or WebM).
+  internal static let frameGrabFailed = L10n.tr("Localizable", "frameGrabFailed", fallback: "Couldn't grab a frame here, usually because the phone can't read this file type (for example MKV, AVI or WebM).")
   /// Framerate
   internal static let framerate = L10n.tr("Localizable", "framerate", fallback: "Framerate")
   /// From beginning
@@ -846,6 +856,8 @@ internal enum L10n {
   internal static let horizontalSwipe = L10n.tr("Localizable", "horizontalSwipe", fallback: "Horizontal swipe")
   /// Hours
   internal static let hours = L10n.tr("Localizable", "hours", fallback: "Hours")
+  /// HH
+  internal static let hoursLabel = L10n.tr("Localizable", "hoursLabel", fallback: "HH")
   /// ID
   internal static let id = L10n.tr("Localizable", "id", fallback: "ID")
   /// Identify
@@ -1026,6 +1038,8 @@ internal enum L10n {
   internal static let logsDescription = L10n.tr("Localizable", "logsDescription", fallback: "Access the Jellyfin server logs for troubleshooting and monitoring purposes.")
   /// Long press
   internal static let longPress = L10n.tr("Localizable", "longPress", fallback: "Long press")
+  /// Low
+  internal static let low = L10n.tr("Localizable", "low", fallback: "Low")
   /// Lyricist
   internal static let lyricist = L10n.tr("Localizable", "lyricist", fallback: "Lyricist")
   /// Lyrics
@@ -1042,6 +1056,8 @@ internal enum L10n {
   internal static let markAsPlayed = L10n.tr("Localizable", "markAsPlayed", fallback: "Mark as played")
   /// Mark as unplayed
   internal static let markAsUnplayed = L10n.tr("Localizable", "markAsUnplayed", fallback: "Mark as unplayed")
+  /// Max
+  internal static let max = L10n.tr("Localizable", "max", fallback: "Max")
   /// Maximum
   internal static let maximum = L10n.tr("Localizable", "maximum", fallback: "Maximum")
   /// Maximum bitrate
@@ -1104,6 +1120,8 @@ internal enum L10n {
   internal static let minutesAfter = L10n.tr("Localizable", "minutesAfter", fallback: "Minutes after")
   /// Minutes before
   internal static let minutesBefore = L10n.tr("Localizable", "minutesBefore", fallback: "Minutes before")
+  /// MM
+  internal static let minutesLabel = L10n.tr("Localizable", "minutesLabel", fallback: "MM")
   /// Missing
   internal static let missing = L10n.tr("Localizable", "missing", fallback: "Missing")
   /// Missing codec values
@@ -1206,6 +1224,8 @@ internal enum L10n {
   internal static let onNow = L10n.tr("Localizable", "onNow", fallback: "On Now")
   /// Opacity
   internal static let opacity = L10n.tr("Localizable", "opacity", fallback: "Opacity")
+  /// Open in player at this time
+  internal static let openInPlayerAtThisTime = L10n.tr("Localizable", "openInPlayerAtThisTime", fallback: "Open in player at this time")
   /// Open library
   internal static let openLibrary = L10n.tr("Localizable", "openLibrary", fallback: "Open library")
   /// Options
@@ -1636,6 +1656,8 @@ internal enum L10n {
   internal static let secondarySubtitleOffset = L10n.tr("Localizable", "secondarySubtitleOffset", fallback: "Secondary subtitle offset")
   /// Secondary subtitles
   internal static let secondarySubtitles = L10n.tr("Localizable", "secondarySubtitles", fallback: "Secondary subtitles")
+  /// SS
+  internal static let secondsLabel = L10n.tr("Localizable", "secondsLabel", fallback: "SS")
   /// Security
   internal static let security = L10n.tr("Localizable", "security", fallback: "Security")
   /// Seek
@@ -1894,10 +1916,16 @@ internal enum L10n {
   }
   /// Thumbnail size
   internal static let thumbnailSize = L10n.tr("Localizable", "thumbnailSize", fallback: "Thumbnail size")
+  /// Thumbnail updated
+  internal static let thumbnailUpdated = L10n.tr("Localizable", "thumbnailUpdated", fallback: "Thumbnail updated")
+  /// Thumbnail upload quality
+  internal static let thumbnailUploadQuality = L10n.tr("Localizable", "thumbnailUploadQuality", fallback: "Thumbnail upload quality")
   /// Time
   internal static let time = L10n.tr("Localizable", "time", fallback: "Time")
   /// Time Base
   internal static let timeBase = L10n.tr("Localizable", "timeBase", fallback: "Time Base")
+  /// That time is past the end of the video.
+  internal static let timeIsPastEnd = L10n.tr("Localizable", "timeIsPastEnd", fallback: "That time is past the end of the video.")
   /// Time left
   internal static let timeLeft = L10n.tr("Localizable", "timeLeft", fallback: "Time left")
   /// Time limit
@@ -2002,6 +2030,8 @@ internal enum L10n {
   internal static let url = L10n.tr("Localizable", "url", fallback: "URL")
   /// Use
   internal static let use = L10n.tr("Localizable", "use", fallback: "Use")
+  /// Use as thumbnail
+  internal static let useAsThumbnail = L10n.tr("Localizable", "useAsThumbnail", fallback: "Use as thumbnail")
   /// Use as transcoding profile
   internal static let useAsTranscodingProfile = L10n.tr("Localizable", "useAsTranscodingProfile", fallback: "Use as transcoding profile")
   /// User

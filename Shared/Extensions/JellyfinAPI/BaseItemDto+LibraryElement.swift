@@ -6,6 +6,7 @@
 // Copyright (c) 2026 Jellyfin & Jellyfin Contributors
 //
 
+import Defaults
 import JellyfinAPI
 import SwiftUI
 
@@ -58,6 +59,9 @@ extension BaseItemDto: LibraryElement {
 
 private struct BaseItemDtoLibraryGridElement: View {
 
+    @Default(.Customization.Library.thumbnailSize)
+    private var thumbnailSize
+
     @Router
     private var router
 
@@ -74,7 +78,8 @@ private struct BaseItemDtoLibraryGridElement: View {
     var body: some View {
         PosterButton(
             item: item,
-            displayType: resolvedLibraryStyle.posterDisplayType
+            displayType: resolvedLibraryStyle.posterDisplayType,
+            size: thumbnailSize.imageSize(scaling: .small, for: resolvedLibraryStyle.posterDisplayType)
         ) { namespace in
             if let action {
                 action()
@@ -86,6 +91,9 @@ private struct BaseItemDtoLibraryGridElement: View {
 }
 
 private struct BaseItemDtoLibraryListElement: View {
+
+    @Default(.Customization.Library.thumbnailSize)
+    private var thumbnailSize
 
     @Environment(\.isEditing)
     private var isEditing
@@ -106,6 +114,11 @@ private struct BaseItemDtoLibraryListElement: View {
 
     private var resolvedLibraryStyle: LibraryStyle {
         item.resolvedLibraryStyle(libraryStyle)
+    }
+
+    private var posterWidth: CGFloat {
+        let width = resolvedLibraryStyle.posterDisplayType == .landscape ? baseItemListLandscapeWidth : baseItemListPortraitWidth
+        return width * thumbnailSize.scale
     }
 
     private func currentProgramView(_ program: BaseItemDto) -> some View {
@@ -168,10 +181,10 @@ private struct BaseItemDtoLibraryListElement: View {
             PosterImage(
                 item: item,
                 type: resolvedLibraryStyle.posterDisplayType,
-                size: .extraSmall
+                size: thumbnailSize.imageSize(scaling: .extraSmall, for: resolvedLibraryStyle.posterDisplayType)
             )
             .subtleShadow()
-            .frame(width: resolvedLibraryStyle.posterDisplayType == .landscape ? baseItemListLandscapeWidth : baseItemListPortraitWidth)
+            .frame(width: posterWidth)
             .overlay {
                 Color.black
                     .opacity(isEditing && !isSelected ? 0.5 : 0.0)

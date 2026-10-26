@@ -274,6 +274,13 @@ class PagingLibraryViewModel<Library: PagingLibrary>: ViewModel, Identifiable {
         try library.materialize(response, pageState: pageState).filter { library.includes($0, environment: environment) }
     }
 
+    private func arranged(_ loadedElements: IdentifiedArrayOf<Element>) -> IdentifiedArrayOf<Element> {
+        IdentifiedArray(
+            library.arrange(loadedElements.elements, environment: environment),
+            uniquingIDsWith: { existing, _ in existing }
+        )
+    }
+
     private func scheduleRefreshForStoreChange() {
         guard !isInvalidated else { return }
 
@@ -367,14 +374,17 @@ class PagingLibraryViewModel<Library: PagingLibrary>: ViewModel, Identifiable {
             hasNextPage = library.hasNextPage && progress.hasNextPage
 
             if replacing {
-                elements = items
+                elements = arranged(items)
                 replacing = false
             } else {
-                elements.append(contentsOf: items.filter { elements[id: $0.id] == nil })
+                var loadedElements = elements
+                loadedElements.append(contentsOf: items.filter { elements[id: $0.id] == nil })
+                elements = arranged(loadedElements)
             }
 
-            // Continue paging when filtered or duplicate rows add no visible items
-            guard elements.count == previousCount, hasNextPage else { return }
+            // Continue paging when filtered or duplicate rows add no visible items,
+            // or leave fewer than a page visible, which may be too short to scroll
+            guard elements.count == previousCount || elements.count < pageSize, hasNextPage else { return }
         }
     }
 

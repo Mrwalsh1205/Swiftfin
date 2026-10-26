@@ -195,6 +195,14 @@ extension Defaults.Keys {
                 UserKey("letterPickerOrientation", default: .disabled)
             }
 
+            static var missingThumbnails: Key<MissingThumbnailPlacement> {
+                UserKey("libraryMissingThumbnails", default: .moveToBottom)
+            }
+
+            static var thumbnailSize: Key<LibraryThumbnailSize> {
+                UserKey("libraryThumbnailSize", default: .medium)
+            }
+
             static var style: Key<LibraryStyle> {
                 UserKey(
                     "libraryStyle",

@@ -25,6 +25,8 @@ struct PagingLibraryView<Library: PagingLibrary>: View where Library.Element: Li
     private var rememberIndividualLibraryStyle
     @Default(.Customization.Library.style)
     private var defaultLibraryStyle
+    @Default(.Customization.Library.thumbnailSize)
+    private var thumbnailSize
 
     @Environment(\.tabSafeAreaInsets)
     private var tabSafeAreaInsets
@@ -246,6 +248,13 @@ struct PagingLibraryView<Library: PagingLibrary>: View where Library.Element: Li
             if Element.layout(for: oldStyle, options: libraryStyleOptions, insets: .zero) ==
                 Element.layout(for: newStyle, options: libraryStyleOptions, insets: .zero)
             {
+                gridProxy.redraw()
+            }
+        }
+        .onChange(of: thumbnailSize) {
+            // Grid layouts change with the size and reload themselves,
+            // but list rows keep their layout and need remeasuring for the new poster width
+            if libraryStyle.displayType == .list {
                 gridProxy.redraw()
             }
         }

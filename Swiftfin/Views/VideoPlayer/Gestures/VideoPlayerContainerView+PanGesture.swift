@@ -142,21 +142,21 @@ extension VideoPlayer.UIContainerViewController {
         unitPoint: UnitPoint
     ) -> any _PanHandlingAction {
         let newAction: any _PanHandlingAction = {
-            if viewState.isPresentingControls {
-                Self.SupplementPanHandlingAction
-            } else if direction.isVertical {
-                if unitPoint.x < 0.5 {
-                    panActionForGestureAction(
-                        for: Defaults[.VideoPlayer.Gesture.verticalPanLeftAction]
-                    )
-                } else {
-                    panActionForGestureAction(
-                        for: Defaults[.VideoPlayer.Gesture.verticalPanRightAction]
-                    )
-                }
-            } else {
+            if direction.isHorizontal {
+                // Also over presented controls, so sliding anywhere on the video can scrub.
+                // The progress bar and toolbar keep their own touches.
                 panActionForGestureAction(
                     for: Defaults[.VideoPlayer.Gesture.horizontalPanAction]
+                )
+            } else if viewState.isPresentingControls {
+                Self.SupplementPanHandlingAction
+            } else if unitPoint.x < 0.5 {
+                panActionForGestureAction(
+                    for: Defaults[.VideoPlayer.Gesture.verticalPanLeftAction]
+                )
+            } else {
+                panActionForGestureAction(
+                    for: Defaults[.VideoPlayer.Gesture.verticalPanRightAction]
                 )
             }
         }()
@@ -277,6 +277,11 @@ extension VideoPlayer.UIContainerViewController {
             }
         ) { startState, handlingState, viewState in
             if handlingState.gestureState == .cancelled || handlingState.gestureState == .failed {
+                // The toast shows a target that will not be seeked to.
+                if viewState.isScrubbing {
+                    viewState.toastProxy.dismiss()
+                }
+
                 viewState.cancelScrub()
                 return
             }
@@ -317,6 +322,21 @@ extension VideoPlayer.UIContainerViewController {
             let newSecondsDuration = Duration.seconds(newSeconds)
 
             viewState.scrubbedSeconds = newSecondsDuration
+
+            guard viewState.isScrubbing else { return }
+
+            // Show the target and the change from where the pan started, e.g. "12:40  (+0:35)".
+            let change = newSecondsDuration - startState.value
+            let isBackward = change < .zero
+            let changeSign = isBackward ? "-" : "+"
+            let runtimeFormat = RuntimeFormatStyle()
+            let targetText = runtimeFormat.format(newSecondsDuration)
+            let changeText = runtimeFormat.format(abs(change))
+
+            viewState.toastProxy.present(
+                Text(verbatim: "\(targetText)  (\(changeSign)\(changeText))"),
+                systemName: isBackward ? "gobackward" : "goforward"
+            )
         }
     }
 

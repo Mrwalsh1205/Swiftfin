@@ -275,11 +275,11 @@ extension Defaults.Keys {
         }
 
         static var jumpBackwardInterval: Key<MediaJumpInterval> {
-            UserKey("jumpBackwardLength", default: .fifteen)
+            UserKey("jumpBackwardLength", default: .five)
         }
 
         static var jumpForwardInterval: Key<MediaJumpInterval> {
-            UserKey("jumpForwardLength", default: .fifteen)
+            UserKey("jumpForwardLength", default: .five)
         }
 
         static var menuActionButtons: Key<[VideoPlayerActionButton]> {
@@ -307,7 +307,7 @@ extension Defaults.Keys {
         enum Gesture {
 
             static var horizontalPanAction: Key<PanGestureAction> {
-                UserKey("videoPlayerHorizontalPanGesture", default: .none)
+                UserKey("videoPlayerHorizontalPanGesture", default: .scrub)
             }
 
             static var horizontalSwipeAction: Key<SwipeGestureAction> {
@@ -326,7 +326,7 @@ extension Defaults.Keys {
             }
 
             static var multiTapGesture: Key<MultiTapGestureAction> {
-                UserKey("videoPlayerMultiTapGesture", default: .none)
+                UserKey("videoPlayerMultiTapGesture", default: .jump)
             }
 
             static var doubleTouchGesture: Key<DoubleTouchGestureAction> {

@@ -260,6 +260,14 @@ private struct BaseItemDtoPosterContextMenu: View {
                 }
             }
         }
+
+        #if os(iOS)
+        if item.canChangeThumbnail {
+            Button(L10n.changeThumbnail, systemImage: "photo") {
+                router.route(to: .changeThumbnail(item: item))
+            }
+        }
+        #endif
     }
 
     @MainActor

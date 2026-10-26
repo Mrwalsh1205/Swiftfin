@@ -18,6 +18,8 @@ extension CustomizeSettingsView {
 
         @Default(.posterCacheSizeLimit)
         private var sizeLimit
+        @Default(.thumbnailUploadQuality)
+        private var uploadQuality
 
         @State
         private var isPresentingClearConfirmation = false
@@ -27,6 +29,8 @@ extension CustomizeSettingsView {
         var body: some View {
             Section(L10n.thumbnailCache) {
                 Picker(L10n.sizeLimit, selection: $sizeLimit)
+
+                Picker(L10n.thumbnailUploadQuality, selection: $uploadQuality)
 
                 Text(usageDescription)
                     .foregroundStyle(.secondary)

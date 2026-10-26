@@ -25,6 +25,8 @@ extension CustomizeSettingsView {
         private var libraryEnabledDrawerFilters
         @Default(.Customization.Library.randomImage)
         private var libraryRandomImage
+        @Default(.Customization.Library.folderPreviews)
+        private var folderPreviews
         @Default(.Customization.Library.style)
         private var libraryStyle
         @Default(.Customization.Library.letterPickerOrientation)
@@ -45,6 +47,8 @@ extension CustomizeSettingsView {
                     Toggle(L10n.favorites, isOn: $showFavorites)
 
                     Toggle(L10n.randomImage, isOn: $libraryRandomImage)
+
+                    Toggle(L10n.folderPreviews, isOn: $folderPreviews)
                 }
 
                 Section(L10n.filters) {

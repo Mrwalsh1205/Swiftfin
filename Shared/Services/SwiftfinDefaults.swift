@@ -93,6 +93,9 @@ extension Defaults.Keys {
     static let signOutOnClose: Key<Bool> = AppKey("signOutOnClose", default: false)
 
     static let posterCacheSizeLimit: Key<PosterCacheSizeLimit> = AppKey("posterCacheSizeLimit", default: .fiveGB)
+
+    /// Bumped whenever folder preview picks change, so showing folders restart their rotation.
+    static let folderPreviewGeneration: Key<Int> = AppKey("folderPreviewGeneration", default: 0)
 }
 
 // MARK: User
@@ -217,6 +220,15 @@ extension Defaults.Keys {
 
             static var rememberSort: Key<Bool> {
                 UserKey("libraryRememberSort", default: false)
+            }
+
+            static var folderPreviews: Key<Bool> {
+                UserKey("libraryFolderPreviews", default: true)
+            }
+
+            /// The grouping last picked in each library that remembers it, keyed by library ID.
+            static var groupings: Key<[String: String]> {
+                UserKey("libraryGroupings", default: [:])
             }
         }
 

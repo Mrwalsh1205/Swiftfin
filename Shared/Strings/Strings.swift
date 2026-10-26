@@ -102,6 +102,8 @@ internal enum L10n {
   internal static let allServers = L10n.tr("Localizable", "allServers", fallback: "All servers")
   /// View and manage all registered users on the server, including their permissions and activity status.
   internal static let allUsersDescription = L10n.tr("Localizable", "allUsersDescription", fallback: "View and manage all registered users on the server, including their permissions and activity status.")
+  /// All videos
+  internal static let allVideos = L10n.tr("Localizable", "allVideos", fallback: "All videos")
   /// Alternate
   internal static let alternate = L10n.tr("Localizable", "alternate", fallback: "Alternate")
   /// Alternate DVD
@@ -316,8 +318,8 @@ internal enum L10n {
   internal static let clear = L10n.tr("Localizable", "clear", fallback: "Clear")
   /// Clear thumbnail cache
   internal static let clearThumbnailCache = L10n.tr("Localizable", "clearThumbnailCache", fallback: "Clear thumbnail cache")
-  /// Thumbnails will download again from your server as you browse.
-  internal static let clearThumbnailCacheMessage = L10n.tr("Localizable", "clearThumbnailCacheMessage", fallback: "Thumbnails will download again from your server as you browse.")
+  /// Thumbnails will download again from your server as you browse, and folders will pick new previews.
+  internal static let clearThumbnailCacheMessage = L10n.tr("Localizable", "clearThumbnailCacheMessage", fallback: "Thumbnails will download again from your server as you browse, and folders will pick new previews.")
   /// Client
   internal static let client = L10n.tr("Localizable", "client", fallback: "Client")
   /// Clip
@@ -750,6 +752,8 @@ internal enum L10n {
   internal static let filters = L10n.tr("Localizable", "filters", fallback: "Filters")
   /// Folder
   internal static let folder = L10n.tr("Localizable", "folder", fallback: "Folder")
+  /// Folder previews
+  internal static let folderPreviews = L10n.tr("Localizable", "folderPreviews", fallback: "Folder previews")
   /// Folders
   internal static let folders = L10n.tr("Localizable", "folders", fallback: "Folders")
   /// Forced
@@ -1522,6 +1526,8 @@ internal enum L10n {
   internal static let resetSettingsDescription = L10n.tr("Localizable", "resetSettingsDescription", fallback: "Reset Swiftfin user settings.")
   /// Are you sure you want to reset all user settings?
   internal static let resetSettingsMessage = L10n.tr("Localizable", "resetSettingsMessage", fallback: "Are you sure you want to reset all user settings?")
+  /// Reshuffle folder previews
+  internal static let reshuffleFolderPreviews = L10n.tr("Localizable", "reshuffleFolderPreviews", fallback: "Reshuffle folder previews")
   /// Resolution
   internal static let resolution = L10n.tr("Localizable", "resolution", fallback: "Resolution")
   /// Restart server

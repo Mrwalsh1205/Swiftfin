@@ -6,6 +6,7 @@
 // Copyright (c) 2026 Jellyfin & Jellyfin Contributors
 //
 
+import Defaults
 import JellyfinAPI
 
 extension BaseItemDto: LibraryParent {
@@ -18,6 +19,10 @@ extension BaseItemDto: LibraryParent {
         static let episodes = Grouping(displayTitle: L10n.episodes, id: "episodes")
         static let seasons = Grouping(displayTitle: L10n.seasons, id: "seasons")
         static let series = Grouping(displayTitle: L10n.series, id: "series")
+
+        // Home videos
+        static let folders = Grouping(displayTitle: L10n.folders, id: "folders")
+        static let allVideos = Grouping(displayTitle: L10n.allVideos, id: "allVideos")
     }
 
     var libraryType: BaseItemKind? {
@@ -28,9 +33,30 @@ extension BaseItemDto: LibraryParent {
         switch collectionType {
         case .tvshows:
             (.series, [.episodes, .seasons, .series])
+        case .homevideos:
+            (.folders, [.folders, .allVideos])
         default:
             nil
         }
+    }
+
+    /// The grouping a library opens with: the one last picked in it, for libraries that remember it.
+    var initialGrouping: Grouping? {
+        guard let groupings else { return nil }
+
+        guard collectionType == .homevideos,
+              let id,
+              let storedID = Defaults[.Customization.Library.groupings][id],
+              let stored = groupings.elements.first(where: { $0.id == storedID })
+        else { return groupings.defaultSelection }
+
+        return stored
+    }
+
+    func rememberGrouping(_ grouping: Grouping?) {
+        guard collectionType == .homevideos, let id, let grouping else { return }
+
+        Defaults[.Customization.Library.groupings][id] = grouping.id
     }
 
     var supportedItemTypes: [BaseItemKind] {
@@ -39,13 +65,19 @@ extension BaseItemDto: LibraryParent {
 
     /// Folder libraries browse direct children, including nested folders
     var isFolderCollection: Bool {
-        libraryType == .folder ||
+        libraryType == .folder || libraryType == .photoAlbum ||
             ((libraryType == .collectionFolder || libraryType == .userView) && (collectionType ?? .folders) == .folders)
     }
 
+    /// Home video libraries browse like folder libraries when grouped by folders.
+    func isFolderCollection(for grouping: Grouping?) -> Bool {
+        isFolderCollection || (collectionType == .homevideos && grouping == .folders)
+    }
+
     func supportedItemTypes(for grouping: Grouping?) -> [BaseItemKind] {
-        if isFolderCollection {
-            return BaseItemKind.supportedCases.appending([.folder, .collectionFolder])
+        if isFolderCollection(for: grouping) {
+            // Folders holding photos are photo albums; keep them so their videos stay reachable.
+            return BaseItemKind.supportedCases.appending([.folder, .collectionFolder, .photoAlbum])
         }
 
         return switch (collectionType, libraryType) {
@@ -81,7 +113,7 @@ extension BaseItemDto: LibraryParent {
     }
 
     func isRecursiveCollection(for grouping: Grouping?) -> Bool {
-        guard !isFolderCollection else { return false }
+        guard !isFolderCollection(for: grouping) else { return false }
         guard let collectionType, libraryType != .userView else { return true }
 
         if grouping == .episodes || grouping == .seasons {

@@ -7,6 +7,8 @@
 //
 
 import BlurHashKit
+import Defaults
+import JellyfinAPI
 import Nuke
 import SwiftUI
 
@@ -51,37 +53,65 @@ struct PosterImage<Element: Poster>: View {
             AlternateLayoutView {
                 Color.clear
             } content: {
-                ImageView(imageSources)
-                    .pipeline(pipeline)
-                    .image { image in
-                        element.transform(image: image, displayType: displayType)
+                if let folder = folderPreviewItem, let folderID = folder.id {
+                    FolderPreviewImage(
+                        folder: folder,
+                        folderID: folderID,
+                        displayType: displayType,
+                        size: size,
+                        pipeline: pipeline
+                    ) {
+                        imageView
                     }
-                    .placeholder { imageSource in
-                        if let blurHash = imageSource.blurHash {
-                            Image(
-                                blurHash: blurHash,
-                                size: .init(width: 8, height: 8)
-                            )?
-                                .resizable()
-                        } else {
-                            SystemImageContentView(
-                                systemName: element.systemImage
-                            )
-                        }
-                    }
-                    .failure {
-                        SystemImageContentView(
-                            systemName: element.systemImage
-                        )
-                    }
-                    .accessibilityRemoveTraits(.isImage)
-                    .accessibilityIgnoresInvertColors()
+                } else {
+                    imageView
+                }
             }
         }
         .posterStyle(
             displayType,
             contentMode: contentMode
         )
+    }
+
+    private var imageView: some View {
+        ImageView(imageSources)
+            .pipeline(pipeline)
+            .image { image in
+                element.transform(image: image, displayType: displayType)
+            }
+            .placeholder { imageSource in
+                if let blurHash = imageSource.blurHash {
+                    Image(
+                        blurHash: blurHash,
+                        size: .init(width: 8, height: 8)
+                    )?
+                        .resizable()
+                } else {
+                    SystemImageContentView(
+                        systemName: element.systemImage
+                    )
+                }
+            }
+            .failure {
+                SystemImageContentView(
+                    systemName: element.systemImage
+                )
+            }
+            .accessibilityRemoveTraits(.isImage)
+            .accessibilityIgnoresInvertColors()
+    }
+
+    /// Folders show a rotating preview of the videos inside them, see `FolderPreviewImage`.
+    private var folderPreviewItem: BaseItemDto? {
+        let item = (element as? BaseItemDto) ?? (element as? ItemEntry)?.snapshot
+
+        guard let item,
+              item.type == .folder || item.type == .photoAlbum,
+              Defaults[.Customization.Library.folderPreviews]
+        else { return nil }
+
+        return item
     }
 }
 

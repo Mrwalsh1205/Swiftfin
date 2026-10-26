@@ -45,6 +45,10 @@ extension CustomizeSettingsView {
                 } message: {
                     Text(L10n.clearThumbnailCacheMessage)
                 }
+
+                Button(L10n.reshuffleFolderPreviews) {
+                    FolderPreviewStore.shared.removeAll()
+                }
             }
             .task {
                 await refreshUsage()
@@ -81,6 +85,7 @@ extension CustomizeSettingsView {
         private func clearCache() {
             usedBytes = nil
             ImageCache.shared.removeAll()
+            FolderPreviewStore.shared.removeAll()
 
             Task {
                 await Task.detached(priority: .userInitiated) {

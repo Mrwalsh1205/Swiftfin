@@ -45,7 +45,7 @@ struct ItemLibrary: MediaLibrary, SearchablePagingLibrary, WithRandomElementLibr
         }
 
         self.environment = .init(
-            grouping: parent.groupings?.defaultSelection,
+            grouping: parent.initialGrouping,
             filters: staticFilters.union(filters)
         )
         self.filterViewModel = .init(
@@ -62,7 +62,11 @@ struct ItemLibrary: MediaLibrary, SearchablePagingLibrary, WithRandomElementLibr
                 Picker(
                     selection: environment.map(
                         getter: { $0.grouping },
-                        setter: { .init(grouping: $0, filters: environment.wrappedValue.filters) }
+                        setter: { grouping in
+                            parent.rememberGrouping(grouping)
+
+                            return .init(grouping: grouping, filters: environment.wrappedValue.filters)
+                        }
                     )
                 ) {
                     ForEach(groupings.elements) { grouping in
@@ -171,7 +175,7 @@ struct ItemLibrary: MediaLibrary, SearchablePagingLibrary, WithRandomElementLibr
 
         guard let parentID = parent.id else { return parameters }
 
-        if parent.isFolderCollection {
+        if parent.isFolderCollection(for: environment.grouping) {
             parameters.parentID = parentID
             parameters.isRecursive = nil
             return parameters

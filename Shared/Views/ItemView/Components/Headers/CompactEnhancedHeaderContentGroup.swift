@@ -43,6 +43,13 @@ extension ItemView {
                     EmptyView()
                 }
                 .failure {
+                    #if os(iOS)
+                    ItemView.SelectableTitle(
+                        item: provider.item,
+                        textStyle: .largeTitle,
+                        alignment: .center
+                    )
+                    #else
                     Text(provider.item.displayTitle)
                         .fixedSize(horizontal: false, vertical: true)
                         .font(.largeTitle)
@@ -50,6 +57,7 @@ extension ItemView {
                         .lineLimit(2)
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.primary)
+                    #endif
                 }
                 .aspectRatio(contentMode: .fit)
                 .frame(height: 70, alignment: .bottom)
@@ -68,6 +76,13 @@ extension ItemView {
                     .zIndex(10)
 
                     VStack(alignment: .center, spacing: 10) {
+                        #if os(iOS)
+                        ItemView.SelectableFileName(
+                            item: provider.item,
+                            alignment: .center
+                        )
+                        #endif
+
                         MetadataHStack(item: provider.item)
 
                         ItemView.ActionBar(provider: provider)

@@ -260,6 +260,10 @@ extension Defaults.Keys {
             static var showRecentlyPlayed: Key<Bool> {
                 UserKey("showRecentlyPlayed", default: false)
             }
+
+            static var showMyMedia: Key<Bool> {
+                UserKey("homeShowMyMedia", default: true)
+            }
         }
 
         enum Search {

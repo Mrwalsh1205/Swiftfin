@@ -20,6 +20,14 @@ struct Toaster: DynamicProperty {
     }
 }
 
+extension EnvironmentValues {
+
+    /// The nearest `OverlayToastView`'s proxy, or `nil` outside one.
+    /// Unlike `Toaster`, reading it never traps when no proxy was provided.
+    @Entry
+    var toastProxy: ToastProxy? = nil
+}
+
 @MainActor
 class ToastProxy: ObservableObject {
 

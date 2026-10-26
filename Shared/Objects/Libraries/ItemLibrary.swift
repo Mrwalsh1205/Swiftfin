@@ -18,6 +18,8 @@ struct ItemLibrary: MediaLibrary, SearchablePagingLibrary, WithRandomElementLibr
 
         var grouping: BaseItemDto.Grouping?
         var filters: ItemFilterCollection
+        /// Only library and folder views set this, not Home rows or search
+        var missingThumbnails: MissingThumbnailPlacement? = nil
 
         static let `default`: Self = .init(
             grouping: nil,
@@ -44,9 +46,19 @@ struct ItemLibrary: MediaLibrary, SearchablePagingLibrary, WithRandomElementLibr
             filters.sortOrder = storedFilters.sortOrder
         }
 
+        // Only library and folder views apply the missing thumbnail setting, not Home rows or search
+        let isLibraryOrFolder = switch parent.type {
+        case .collectionFolder, .folder, .photoAlbum, .userView:
+            true
+        default:
+            false
+        }
+        let missingThumbnails: MissingThumbnailPlacement = Defaults[.Customization.Library.missingThumbnails]
+
         self.environment = .init(
             grouping: parent.groupings?.defaultSelection,
-            filters: staticFilters.union(filters)
+            filters: staticFilters.union(filters),
+            missingThumbnails: isLibraryOrFolder ? missingThumbnails : nil
         )
         self.filterViewModel = .init(
             parent: parent,
@@ -62,7 +74,13 @@ struct ItemLibrary: MediaLibrary, SearchablePagingLibrary, WithRandomElementLibr
                 Picker(
                     selection: environment.map(
                         getter: { $0.grouping },
-                        setter: { .init(grouping: $0, filters: environment.wrappedValue.filters) }
+                        setter: {
+                            .init(
+                                grouping: $0,
+                                filters: environment.wrappedValue.filters,
+                                missingThumbnails: environment.wrappedValue.missingThumbnails
+                            )
+                        }
                     )
                 ) {
                     ForEach(groupings.elements) { grouping in
@@ -205,7 +223,29 @@ struct ItemLibrary: MediaLibrary, SearchablePagingLibrary, WithRandomElementLibr
     }
 
     func includes(_ element: ItemEntry, environment: Environment) -> Bool {
-        element.item.confirmedUserData?.matches(environment.filters.traits) != false
+        if environment.missingThumbnails == .hide, element.snapshot.isMissingThumbnail {
+            return false
+        }
+
+        return element.item.confirmedUserData?.matches(environment.filters.traits) != false
+    }
+
+    /// Stable partition: videos missing a thumbnail follow everything else loaded so far
+    func arrange(_ elements: [ItemEntry], environment: Environment) -> [ItemEntry] {
+        guard environment.missingThumbnails == .moveToBottom else { return elements }
+
+        var withThumbnails: [ItemEntry] = []
+        var missingThumbnails: [ItemEntry] = []
+
+        for element in elements {
+            if element.snapshot.isMissingThumbnail {
+                missingThumbnails.append(element)
+            } else {
+                withThumbnails.append(element)
+            }
+        }
+
+        return withThumbnails + missingThumbnails
     }
 
     func shouldRefreshForUserDataChange(environment: Environment) -> Bool {
@@ -277,6 +317,8 @@ private struct ItemLibraryBody<Content: View>: View {
 
     @Default(.Customization.Library.enabledDrawerFilters)
     private var enabledDrawerFilters
+    @Default(.Customization.Library.missingThumbnails)
+    private var missingThumbnails
 
     @Router
     private var router
@@ -310,6 +352,12 @@ private struct ItemLibraryBody<Content: View>: View {
             }
             .onChange(of: filterViewModel.currentFilters) {
                 rememberSort(from: filterViewModel.currentFilters)
+            }
+            .onChange(of: missingThumbnails) {
+                // Views that do not apply the setting keep it unset
+                guard viewModel.environment.missingThumbnails != nil else { return }
+
+                viewModel.environment.missingThumbnails = missingThumbnails
             }
             .onReceive(
                 filterViewModel.$currentFilters

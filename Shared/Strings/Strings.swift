@@ -726,6 +726,8 @@ internal enum L10n {
   internal static let external = L10n.tr("Localizable", "external", fallback: "External")
   /// External URL
   internal static let externalURL = L10n.tr("Localizable", "externalURL", fallback: "External URL")
+  /// Extra small
+  internal static let extraSmall = L10n.tr("Localizable", "extraSmall", fallback: "Extra small")
   /// Failed to delete item at index %1$@: %2$@
   internal static func failedDeletionAtIndexError(_ p1: Any, _ p2: Any) -> String {
     return L10n.tr("Localizable", "failedDeletionAtIndexError", String(describing: p1), String(describing: p2), fallback: "Failed to delete item at index %1$@: %2$@")
@@ -820,6 +822,8 @@ internal enum L10n {
   internal static let hexColor = L10n.tr("Localizable", "hexColor", fallback: "Hex color")
   /// Hidden
   internal static let hidden = L10n.tr("Localizable", "hidden", fallback: "Hidden")
+  /// Hide
+  internal static let hide = L10n.tr("Localizable", "hide", fallback: "Hide")
   /// Hide user from login screen
   internal static let hideUserFromLoginScreen = L10n.tr("Localizable", "hideUserFromLoginScreen", fallback: "Hide user from login screen")
   /// Hint
@@ -926,6 +930,8 @@ internal enum L10n {
   internal static let landscape = L10n.tr("Localizable", "landscape", fallback: "Landscape")
   /// Language
   internal static let language = L10n.tr("Localizable", "language", fallback: "Language")
+  /// Large
+  internal static let large = L10n.tr("Localizable", "large", fallback: "Large")
   /// Larger
   internal static let larger = L10n.tr("Localizable", "larger", fallback: "Larger")
   /// Largest
@@ -1058,6 +1064,8 @@ internal enum L10n {
   internal static let mediaDownloads = L10n.tr("Localizable", "mediaDownloads", fallback: "Media downloads")
   /// Media playback
   internal static let mediaPlayback = L10n.tr("Localizable", "mediaPlayback", fallback: "Media playback")
+  /// Medium
+  internal static let medium = L10n.tr("Localizable", "medium", fallback: "Medium")
   /// Mbps
   internal static let megabitsPerSecond = L10n.tr("Localizable", "megabitsPerSecond", fallback: "Mbps")
   /// Menu
@@ -1090,8 +1098,12 @@ internal enum L10n {
   internal static let missing = L10n.tr("Localizable", "missing", fallback: "Missing")
   /// Missing codec values
   internal static let missingCodecValues = L10n.tr("Localizable", "missingCodecValues", fallback: "Missing codec values")
+  /// Missing thumbnails
+  internal static let missingThumbnails = L10n.tr("Localizable", "missingThumbnails", fallback: "Missing thumbnails")
   /// Mixer
   internal static let mixer = L10n.tr("Localizable", "mixer", fallback: "Mixer")
+  /// Move to bottom
+  internal static let moveToBottom = L10n.tr("Localizable", "moveToBottom", fallback: "Move to bottom")
   /// Movie
   internal static let movie = L10n.tr("Localizable", "movie", fallback: "Movie")
   /// Movies
@@ -1660,6 +1672,8 @@ internal enum L10n {
   internal static let showMissingEpisodes = L10n.tr("Localizable", "showMissingEpisodes", fallback: "Show missing episodes")
   /// Show missing seasons
   internal static let showMissingSeasons = L10n.tr("Localizable", "showMissingSeasons", fallback: "Show missing seasons")
+  /// Show normally
+  internal static let showNormally = L10n.tr("Localizable", "showNormally", fallback: "Show normally")
   /// Show on Skip Back
   internal static let showOnSkipBack = L10n.tr("Localizable", "showOnSkipBack", fallback: "Show on Skip Back")
   /// Show progress
@@ -1710,6 +1724,8 @@ internal enum L10n {
   internal static let slowScrub = L10n.tr("Localizable", "slowScrub", fallback: "Slow scrub")
   /// Slow scrubbing
   internal static let slowScrubbing = L10n.tr("Localizable", "slowScrubbing", fallback: "Slow scrubbing")
+  /// Small
+  internal static let small = L10n.tr("Localizable", "small", fallback: "Small")
   /// Smaller
   internal static let smaller = L10n.tr("Localizable", "smaller", fallback: "Smaller")
   /// Smallest
@@ -1860,6 +1876,8 @@ internal enum L10n {
   internal static func thumbnailCacheUsageNoLimit(_ p1: Any) -> String {
     return L10n.tr("Localizable", "thumbnailCacheUsageNoLimit", String(describing: p1), fallback: "Thumbnails: %@, no limit")
   }
+  /// Thumbnail size
+  internal static let thumbnailSize = L10n.tr("Localizable", "thumbnailSize", fallback: "Thumbnail size")
   /// Time
   internal static let time = L10n.tr("Localizable", "time", fallback: "Time")
   /// Time Base

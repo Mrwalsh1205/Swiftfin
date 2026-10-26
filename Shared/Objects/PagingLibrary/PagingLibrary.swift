@@ -79,6 +79,9 @@ protocol PagingLibrary<Element> {
 
     func includes(_ element: Element, environment: Environment) -> Bool
 
+    /// Orders all loaded elements after each page is added
+    func arrange(_ elements: [Element], environment: Environment) -> [Element]
+
     /// Reloads when user data can change this library's membership or ordering
     func shouldRefreshForUserDataChange(environment: Environment) -> Bool
 
@@ -114,6 +117,10 @@ extension PagingLibrary {
 
     func includes(_ element: Element, environment: Environment) -> Bool {
         true
+    }
+
+    func arrange(_ elements: [Element], environment: Environment) -> [Element] {
+        elements
     }
 
     func shouldRefreshForUserDataChange(environment: Environment) -> Bool {

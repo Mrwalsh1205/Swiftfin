@@ -29,6 +29,10 @@ extension CustomizeSettingsView {
         private var libraryStyle
         @Default(.Customization.Library.letterPickerOrientation)
         private var letterPickerOrientation
+        @Default(.Customization.Library.missingThumbnails)
+        private var missingThumbnails
+        @Default(.Customization.Library.thumbnailSize)
+        private var thumbnailSize
 
         @Default(.Customization.Library.rememberLayout)
         private var rememberLibraryLayout
@@ -56,6 +60,10 @@ extension CustomizeSettingsView {
                 }
 
                 Section {
+                    PlatformPicker(L10n.missingThumbnails, selection: $missingThumbnails)
+                }
+
+                Section {
                     Toggle(L10n.rememberSorting, isOn: $rememberLibrarySort)
                 }
 
@@ -63,6 +71,10 @@ extension CustomizeSettingsView {
                     PlatformPicker(L10n.layout, selection: $libraryStyle.displayType)
 
                     PlatformPicker(L10n.posters, selection: $libraryStyle.posterDisplayType)
+
+                    #if os(iOS)
+                    PlatformPicker(L10n.thumbnailSize, selection: $thumbnailSize)
+                    #endif
 
                     if libraryStyle.displayType == .list, !UIDevice.isPhone {
                         Stepper(L10n.columns, value: $libraryStyle.listColumnCount, in: 1 ... 4, step: 1) {

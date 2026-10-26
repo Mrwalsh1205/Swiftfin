@@ -70,6 +70,21 @@ extension LibraryElement {
         options: LibraryStyleOptions,
         insets: EdgeInsets
     ) -> CollectionVGridLayout {
+        layout(
+            for: libraryStyle,
+            options: options,
+            insets: insets,
+            thumbnailSize: .medium
+        )
+    }
+
+    /// The `.medium` thumbnail size gives the standard layout
+    static func layout(
+        for libraryStyle: LibraryStyle,
+        options: LibraryStyleOptions,
+        insets: EdgeInsets,
+        thumbnailSize: LibraryThumbnailSize
+    ) -> CollectionVGridLayout {
         let libraryStyle = options.normalized(libraryStyle)
 
         #if os(iOS)
@@ -77,7 +92,7 @@ extension LibraryElement {
         case .grid:
             if UIDevice.isPhone {
                 return .columns(
-                    libraryStyle.posterDisplayType == .landscape ? 2 : 3,
+                    thumbnailSize.phoneColumnCount(for: libraryStyle.posterDisplayType),
                     insets: insets,
                     itemSpacing: EdgeInsets.itemSpacing,
                     lineSpacing: EdgeInsets.itemSpacing
@@ -85,7 +100,7 @@ extension LibraryElement {
             }
 
             return .minWidth(
-                libraryStyle.posterDisplayType == .landscape ? 220 : 140,
+                (libraryStyle.posterDisplayType == .landscape ? 220 : 140) * thumbnailSize.scale,
                 insets: insets,
                 itemSpacing: EdgeInsets.itemSpacing,
                 lineSpacing: EdgeInsets.itemSpacing

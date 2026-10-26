@@ -120,6 +120,9 @@ extension VideoPlayer {
 
         private struct PlaybackControlsContainerView: View {
 
+            @Default(.VideoPlayer.Gesture.horizontalPanAction)
+            private var horizontalPanAction
+
             @Environment(ViewState.self)
             private var viewState
 
@@ -133,10 +136,12 @@ extension VideoPlayer {
                         .vertical
                     } else {
                         if viewState.isPresentingControls {
+                            // Horizontal pans run the horizontal pan action, such as scrubbing,
+                            // over the presented controls too.
                             if viewState.supplements.isEmpty {
-                                []
+                                horizontalPanAction == .none ? [] : .horizontal
                             } else {
-                                Direction.up
+                                horizontalPanAction == .none ? Direction.up : .allButDown
                             }
                         } else {
                             .allButDown

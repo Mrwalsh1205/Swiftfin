@@ -50,87 +50,137 @@ extension VideoPlayer.UIContainerViewController {
         }
     }
 
+    // MARK: - Multi-tap
+
+    /// The share of the width, at each side, where repeated taps jump.
+    /// Repeated taps in the remaining middle of the width play or pause.
+    private static let sideTapZoneWidthFraction: CGFloat = 0.25
+
+    /// How soon a tap must follow the previous one to continue its multi-tap.
+    private static let multiTapInterval: TimeInterval = 0.35
+
+    private enum TapZone {
+        case left
+        case middle
+        case right
+    }
+
     private func handleSingleTapGesture(
         location: CGPoint,
         unitPoint: UnitPoint
     ) {
         let action = Defaults[.VideoPlayer.Gesture.multiTapGesture]
-        let canMultiTap = action != .none && viewState.mediaSession?.canSeek == true
+        let width = unitPoint.x > 0 ? location.x / unitPoint.x : view.bounds.width
+        let zone = tapZone(of: location, width: width)
 
-        guard canMultiTap else {
+        guard action != .none, canPerformMultiTapAction(in: zone) else {
             viewState.cancelTapGesture()
             performSingleTapGesture()
             return
         }
 
-        let jumpProgressObserver = viewState.jumpProgressObserver
-        let width = unitPoint.x > 0 ? location.x / unitPoint.x : view.bounds.width
-        var isMultiTap = false
+        let previousZone = viewState.lastTapLocation.map { tapZone(of: $0, width: width) }
 
-        switch action {
-        case .none:
-            ()
-        case .jump:
-            if canMultiTap, let lastTapLocation = viewState.lastTapLocation {
-
-                let (isSameSide, isLeftSide) = pointsAreSameSide(
-                    lastTapLocation,
-                    location,
-                    width: width,
-                    midPadding: viewState.isCompact ? 20 : 50
-                )
-
-                if isSameSide {
-                    guard viewState.mediaSession?.canSeek == true else { return }
-
-                    isMultiTap = true
-                    viewState.hideControls()
-
-                    if isLeftSide {
-                        let interval = Defaults[.VideoPlayer.jumpBackwardInterval]
-                        viewState.mediaSession?.seek(by: .zero - (interval.rawValue))
-
-                        viewState.toastProxy.present(
-                            Text(
-                                interval.rawValue * (jumpProgressObserver.jumps),
-                                format: .minuteSecondsNarrow
-                            ),
-                            systemName: "gobackward"
-                        )
-                    } else {
-                        let interval = Defaults[.VideoPlayer.jumpForwardInterval]
-                        viewState.mediaSession?.seek(by: interval.rawValue)
-
-                        viewState.toastProxy.present(
-                            Text(
-                                interval.rawValue * (jumpProgressObserver.jumps),
-                                format: .minuteSecondsNarrow
-                            ),
-                            systemName: "goforward"
-                        )
-                    }
-                }
-            }
-        }
-
-        // Respond to the first tap immediately and keep controls hidden during subsequent seek taps.
-        if !isMultiTap {
+        guard previousZone == zone else {
+            // Respond to the first tap immediately. A quick repeat in the same zone acts on it.
             performSingleTapGesture()
+            beginMultiTap(at: location, in: zone)
+            return
         }
 
-        let side = side(
-            of: location,
-            width: width,
-            midPadding: viewState.isCompact ? 20 : 50
+        switch zone {
+        case .left:
+            jumpOnMultiTap(at: location, isForward: false)
+        case .middle:
+            togglePlayPauseOnMultiTap()
+        case .right:
+            jumpOnMultiTap(at: location, isForward: true)
+        }
+    }
+
+    private func tapZone(of point: CGPoint, width: CGFloat) -> TapZone {
+        let sideZoneWidth = width * Self.sideTapZoneWidthFraction
+
+        if point.x < sideZoneWidth {
+            return .left
+        }
+
+        if point.x > width - sideZoneWidth {
+            return .right
+        }
+
+        return .middle
+    }
+
+    private func canPerformMultiTapAction(in zone: TapZone) -> Bool {
+        switch zone {
+        case .left, .right:
+            return viewState.mediaSession?.canSeek == true
+        case .middle:
+            return viewState.mediaSession?.canControlPlayback == true
+        }
+    }
+
+    private func beginMultiTap(at location: CGPoint, in zone: TapZone) {
+        let jumpProgressObserver = viewState.jumpProgressObserver
+
+        // Count this sequence's jumps from zero, whatever an earlier tap left behind.
+        jumpProgressObserver.reset()
+        viewState.lastTapLocation = location
+
+        switch zone {
+        case .left:
+            jumpProgressObserver.jumpBackward(interval: Self.multiTapInterval)
+        case .middle:
+            jumpProgressObserver.timer.poke(interval: Self.multiTapInterval)
+        case .right:
+            jumpProgressObserver.jumpForward(interval: Self.multiTapInterval)
+        }
+    }
+
+    private func jumpOnMultiTap(at location: CGPoint, isForward: Bool) {
+        let jumpProgressObserver = viewState.jumpProgressObserver
+        let interval = isForward
+            ? Defaults[.VideoPlayer.jumpForwardInterval]
+            : Defaults[.VideoPlayer.jumpBackwardInterval]
+
+        // Keep the controls hidden while repeated taps seek.
+        viewState.hideControls()
+        viewState.mediaSession?.seek(by: isForward ? interval.rawValue : Duration.zero - interval.rawValue)
+
+        viewState.toastProxy.present(
+            Text(
+                interval.rawValue * jumpProgressObserver.jumps,
+                format: .minuteSecondsNarrow
+            ),
+            systemName: isForward ? "goforward" : "gobackward"
         )
 
         viewState.lastTapLocation = location
 
-        if side {
-            jumpProgressObserver.jumpBackward(interval: 0.35)
+        if isForward {
+            jumpProgressObserver.jumpForward(interval: Self.multiTapInterval)
         } else {
-            jumpProgressObserver.jumpForward(interval: 0.35)
+            jumpProgressObserver.jumpBackward(interval: Self.multiTapInterval)
         }
+    }
+
+    private func togglePlayPauseOnMultiTap() {
+        // The first tap toggled the controls. Toggle them back, so the
+        // double tap leaves them as they were and only plays or pauses.
+        performSingleTapGesture()
+        viewState.cancelTapGesture()
+
+        guard let mediaSession = viewState.mediaSession else { return }
+
+        mediaSession.togglePlayPause()
+
+        let isPaused = mediaSession.playbackRequestStatus == .paused
+
+        viewState.toastProxy.present(
+            isPaused ? L10n.pause : L10n.play,
+            systemName: isPaused ? "pause.fill" : "play.fill"
+        )
     }
 
     private func performSingleTapGesture() {
@@ -143,29 +193,6 @@ extension VideoPlayer.UIContainerViewController {
         } else {
             viewState.toggleControls()
         }
-    }
-
-    private func side(
-        of point: CGPoint,
-        width: CGFloat,
-        midPadding: CGFloat = 50
-    ) -> Bool {
-        let midX = width / 2
-        let leftSide = midX - midPadding
-
-        return point.x < leftSide
-    }
-
-    private func pointsAreSameSide(
-        _ p1: CGPoint,
-        _ p2: CGPoint,
-        width: CGFloat,
-        midPadding: CGFloat = 50
-    ) -> (isSameSide: Bool, isLeftSide: Bool) {
-        let p1Side = side(of: p1, width: width, midPadding: midPadding)
-        let p2Side = side(of: p2, width: width, midPadding: midPadding)
-
-        return (p1Side == p2Side, p1Side)
     }
 
     private func handleDoubleTouchGesture(

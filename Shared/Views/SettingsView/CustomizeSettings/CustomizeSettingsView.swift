@@ -57,6 +57,10 @@ struct CustomizeSettingsView: View {
             }
 
             HomeSection()
+
+            #if os(iOS)
+            ThumbnailCacheSection()
+            #endif
         }
         .navigationTitle(L10n.advanced)
     }

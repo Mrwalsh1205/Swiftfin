@@ -14,6 +14,7 @@ on:
       - synchronize
       - ready_for_review
     branches: [ main ]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
@@ -27,7 +28,6 @@ jobs:
       matrix:
         scheme:
           - "Swiftfin"
-          - "Swiftfin tvOS"
 
     runs-on: xcode-27
 

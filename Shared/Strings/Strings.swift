@@ -312,6 +312,12 @@ internal enum L10n {
   internal static let chapters = L10n.tr("Localizable", "chapters", fallback: "Chapters")
   /// Chapter slider
   internal static let chapterSlider = L10n.tr("Localizable", "chapterSlider", fallback: "Chapter slider")
+  /// Clear
+  internal static let clear = L10n.tr("Localizable", "clear", fallback: "Clear")
+  /// Clear thumbnail cache
+  internal static let clearThumbnailCache = L10n.tr("Localizable", "clearThumbnailCache", fallback: "Clear thumbnail cache")
+  /// Thumbnails will download again from your server as you browse.
+  internal static let clearThumbnailCacheMessage = L10n.tr("Localizable", "clearThumbnailCacheMessage", fallback: "Thumbnails will download again from your server as you browse.")
   /// Client
   internal static let client = L10n.tr("Localizable", "client", fallback: "Client")
   /// Clip
@@ -1142,6 +1148,8 @@ internal enum L10n {
   internal static let noEpisodesAvailable = L10n.tr("Localizable", "noEpisodesAvailable", fallback: "No episodes available")
   /// No items
   internal static let noItems = L10n.tr("Localizable", "noItems", fallback: "No items")
+  /// No limit
+  internal static let noLimit = L10n.tr("Localizable", "noLimit", fallback: "No limit")
   /// No local servers found
   internal static let noLocalServersFound = L10n.tr("Localizable", "noLocalServersFound", fallback: "No local servers found")
   /// None
@@ -1690,6 +1698,8 @@ internal enum L10n {
   internal static let simple = L10n.tr("Localizable", "simple", fallback: "Simple")
   /// Size
   internal static let size = L10n.tr("Localizable", "size", fallback: "Size")
+  /// Size limit
+  internal static let sizeLimit = L10n.tr("Localizable", "sizeLimit", fallback: "Size limit")
   /// Skip
   internal static let skip = L10n.tr("Localizable", "skip", fallback: "Skip")
   /// Skip duplicates
@@ -1838,6 +1848,18 @@ internal enum L10n {
   internal static let thumb = L10n.tr("Localizable", "thumb", fallback: "Thumb")
   /// A thumbnail image used on the homepage and when browsing the library in thumbnail mode. Only applicable to video content.
   internal static let thumbImageDescription = L10n.tr("Localizable", "thumbImageDescription", fallback: "A thumbnail image used on the homepage and when browsing the library in thumbnail mode. Only applicable to video content.")
+  /// Thumbnail cache
+  internal static let thumbnailCache = L10n.tr("Localizable", "thumbnailCache", fallback: "Thumbnail cache")
+  /// Thumbnails: calculating
+  internal static let thumbnailCacheCalculating = L10n.tr("Localizable", "thumbnailCacheCalculating", fallback: "Thumbnails: calculating")
+  /// Thumbnails: %@ of %@
+  internal static func thumbnailCacheUsage(_ p1: Any, _ p2: Any) -> String {
+    return L10n.tr("Localizable", "thumbnailCacheUsage", String(describing: p1), String(describing: p2), fallback: "Thumbnails: %@ of %@")
+  }
+  /// Thumbnails: %@, no limit
+  internal static func thumbnailCacheUsageNoLimit(_ p1: Any) -> String {
+    return L10n.tr("Localizable", "thumbnailCacheUsageNoLimit", String(describing: p1), fallback: "Thumbnails: %@, no limit")
+  }
   /// Time
   internal static let time = L10n.tr("Localizable", "time", fallback: "Time")
   /// Time Base

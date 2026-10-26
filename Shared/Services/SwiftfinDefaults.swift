@@ -91,6 +91,8 @@ extension Defaults.Keys {
 
     static let signOutOnBackground: Key<Bool> = AppKey("signOutOnBackground", default: true)
     static let signOutOnClose: Key<Bool> = AppKey("signOutOnClose", default: false)
+
+    static let posterCacheSizeLimit: Key<PosterCacheSizeLimit> = AppKey("posterCacheSizeLimit", default: .fiveGB)
 }
 
 // MARK: User

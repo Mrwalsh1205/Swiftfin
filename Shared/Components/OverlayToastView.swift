@@ -56,6 +56,7 @@ struct OverlayToastView<Content: View>: View {
         ZStack(alignment: .top) {
             content
                 .environmentObject(toastProxy)
+                .environment(\.toastProxy, toastProxy)
 
             if toastProxy.isPresenting {
                 VStack {

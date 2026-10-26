@@ -38,11 +38,24 @@ extension ItemView {
                         ParentButton(title: parentTitle, id: parentID)
                     }
 
+                    #if os(iOS)
+                    ItemView.SelectableTitle(
+                        item: provider.item,
+                        textStyle: .largeTitle,
+                        alignment: .natural
+                    )
+
+                    ItemView.SelectableFileName(
+                        item: provider.item,
+                        alignment: .natural
+                    )
+                    #else
                     Text(provider.item.displayTitle)
                         .font(.largeTitle)
                         .fontWeight(.semibold)
                         .multilineTextAlignment(.leading)
                         .lineLimit(2)
+                    #endif
 
                     MetadataHStack(item: provider.item)
                 }

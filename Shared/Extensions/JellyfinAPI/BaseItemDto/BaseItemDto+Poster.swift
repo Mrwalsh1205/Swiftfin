@@ -260,6 +260,10 @@ private struct BaseItemDtoPosterContextMenu: View {
                 }
             }
         }
+
+        #if os(iOS)
+        CopyItemTextMenuButtons(item: item)
+        #endif
     }
 
     @MainActor

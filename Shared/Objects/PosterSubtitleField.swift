@@ -21,7 +21,8 @@ enum PosterSubtitleField: String, CaseIterable, Displayable, Storable {
     case year
 
     // Fetch these with poster collections so changing labels needs no per-item requests.
-    static let itemFields: [ItemFields] = [.mediaStreams, .genres, .studios]
+    // `path` lets the long-press menu offer "Copy file name" without a per-item request.
+    static let itemFields: [ItemFields] = [.mediaStreams, .genres, .studios, .path]
 
     var displayTitle: String {
         switch self {

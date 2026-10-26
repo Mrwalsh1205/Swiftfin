@@ -53,6 +53,10 @@ struct DefaultContentGroupProvider: ContentGroupProvider {
 
         cinematicSelectionContentGroup
         #else
+        if Defaults[.Customization.Home.showMyMedia] {
+            MyMediaGroup()
+        }
+
         PosterGroup(
             library: ResumeItemsLibrary(mediaTypes: [.video]),
             posterDisplayType: .landscape,

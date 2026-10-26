@@ -64,6 +64,13 @@ extension ItemView {
                     EmptyView()
                 }
                 .failure {
+                    #if os(iOS)
+                    ItemView.SelectableTitle(
+                        item: provider.item,
+                        textStyle: .largeTitle,
+                        alignment: .natural
+                    )
+                    #else
                     Text(provider.item.displayTitle)
                         .fixedSize(horizontal: false, vertical: true)
                         .font(.largeTitle)
@@ -71,6 +78,7 @@ extension ItemView {
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
                         .foregroundStyle(.primary)
+                    #endif
                 }
                 .accessibilityLabel(provider.item.displayTitle)
                 .accessibilityRemoveTraits(.isImage)
@@ -86,6 +94,13 @@ extension ItemView {
                             }
 
                             logo
+
+                            #if os(iOS)
+                            ItemView.SelectableFileName(
+                                item: provider.item,
+                                alignment: .natural
+                            )
+                            #endif
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
 

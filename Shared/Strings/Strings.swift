@@ -418,6 +418,12 @@ internal enum L10n {
   internal static let controlOtherUsers = L10n.tr("Localizable", "controlOtherUsers", fallback: "Control other users")
   /// Control shared devices
   internal static let controlSharedDevices = L10n.tr("Localizable", "controlSharedDevices", fallback: "Control shared devices")
+  /// Copied
+  internal static let copied = L10n.tr("Localizable", "copied", fallback: "Copied")
+  /// Copy file name
+  internal static let copyFileName = L10n.tr("Localizable", "copyFileName", fallback: "Copy file name")
+  /// Copy title
+  internal static let copyTitle = L10n.tr("Localizable", "copyTitle", fallback: "Copy title")
   /// Corrupted frames
   internal static let corruptedFrames = L10n.tr("Localizable", "corruptedFrames", fallback: "Corrupted frames")
   /// Count
@@ -1106,6 +1112,8 @@ internal enum L10n {
   internal static let musicVideos = L10n.tr("Localizable", "musicVideos", fallback: "Music videos")
   /// MVC
   internal static let mvc = L10n.tr("Localizable", "mvc", fallback: "MVC")
+  /// My Media
+  internal static let myMedia = L10n.tr("Localizable", "myMedia", fallback: "My Media")
   /// Name
   internal static let name = L10n.tr("Localizable", "name", fallback: "Name")
   /// Narrator
@@ -1660,6 +1668,8 @@ internal enum L10n {
   internal static let showMissingEpisodes = L10n.tr("Localizable", "showMissingEpisodes", fallback: "Show missing episodes")
   /// Show missing seasons
   internal static let showMissingSeasons = L10n.tr("Localizable", "showMissingSeasons", fallback: "Show missing seasons")
+  /// Show My Media
+  internal static let showMyMedia = L10n.tr("Localizable", "showMyMedia", fallback: "Show My Media")
   /// Show on Skip Back
   internal static let showOnSkipBack = L10n.tr("Localizable", "showOnSkipBack", fallback: "Show on Skip Back")
   /// Show progress

@@ -14,6 +14,8 @@ extension CustomizeSettingsView {
 
     struct HomeSection: View {
 
+        @Default(.Customization.Home.showMyMedia)
+        private var showMyMedia
         @Default(.Customization.Home.showRecentlyAdded)
         private var showRecentlyAdded
         @Default(.Customization.Home.showRecentlyPlayed)
@@ -26,6 +28,9 @@ extension CustomizeSettingsView {
         var body: some View {
             Section(L10n.home) {
 
+                #if os(iOS)
+                Toggle(L10n.showMyMedia, isOn: $showMyMedia)
+                #endif
                 Toggle(L10n.recentlyAdded, isOn: $showRecentlyAdded)
                 Toggle(L10n.recentlyPlayed, isOn: $showRecentlyPlayed)
                 Toggle(L10n.nextUpRewatch, isOn: $resumeNextUp)

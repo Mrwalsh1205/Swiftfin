@@ -22,6 +22,11 @@ struct MainTabView: View {
     @InjectedObject(\.userSessionManager)
     private var userSessionManager
 
+    #if os(iOS)
+    @State
+    private var isPresentingFolderPane = false
+    #endif
+
     @StateObject
     private var tabCoordinator: TabCoordinator
 
@@ -76,9 +81,19 @@ struct MainTabView: View {
                         view.topBarTrailing {
                             FirstTabSettingsBarButton()
                         }
+                        .toolbar {
+                            ToolbarItem(placement: .topBarLeading) {
+                                FolderPaneBarButton(isPresented: $isPresentingFolderPane)
+                            }
+                        }
                     }
                 #endif
         }
+        #if os(iOS)
+        .if(tabCoordinator.tabs.first?.item.id == tab.item.id) { view in
+            view.folderPane(isPresented: $isPresentingFolderPane, coordinator: tab.coordinator)
+        }
+        #endif
         .environmentObject(tabCoordinator)
         .environment(\.tabItemSelected, tab.publisher)
     }
@@ -136,6 +151,12 @@ struct MainTabView: View {
                     await tabCoordinator.route(to: route)
                 }
             }
+            #if os(iOS)
+            .onFirstAppear {
+                // Keeps the folder pane's index current, as often as its settings ask.
+                FolderIndexStore.shared.prepare()
+            }
+            #endif
             #if os(tvOS)
             .background(alignment: .top) {
                 FocusedPosterCinematicBackgroundView()

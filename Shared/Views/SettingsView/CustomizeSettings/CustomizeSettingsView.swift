@@ -48,6 +48,12 @@ struct CustomizeSettingsView: View {
                 router.route(to: .librarySettings)
             }
 
+            #if os(iOS)
+            ChevronButton(L10n.folderIndex) {
+                router.route(to: .folderIndexSettings)
+            }
+            #endif
+
             ChevronButton(L10n.posters) {
                 router.route(to: .posterSettings)
             }

@@ -46,6 +46,41 @@ extension DataCache.Swiftfin {
         return dataCache
     }()
 
+    private static let pinnedPostersDirectoryName = "org.jellyfin.swiftfin/PinnedPosters"
+
+    /// Thumbnails of folders the user pinned in the folder pane.
+    ///
+    /// Never trimmed to make room, so they are not downloaded again once saved.
+    /// Uses the same file names as `posters`, so both caches share keys.
+    static let pinnedPosters: DataCache? = {
+        guard let root = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            return nil
+        }
+
+        let path = root.appendingPathComponent(DataCache.Swiftfin.pinnedPostersDirectoryName, isDirectory: true)
+
+        let dataCache = try? DataCache(path: path) { name in
+            guard let url = name.url else { return nil }
+
+            return ImagePipeline.cacheKey(for: url)
+        }
+
+        DataCache.Swiftfin.excludeFromBackup(path)
+
+        dataCache?.isSweepEnabled = false
+
+        return dataCache
+    }()
+
+    /// The poster cache, falling back to pinned thumbnails once the poster cache has trimmed them.
+    static let postersWithPinned: (any DataCaching)? = {
+        guard let posters = DataCache.Swiftfin.posters else {
+            return DataCache.Swiftfin.pinnedPosters
+        }
+
+        return PinnedFallbackDataCache(primary: posters, pinned: DataCache.Swiftfin.pinnedPosters)
+    }()
+
     /// Applies a new size limit and trims right away, instead of
     /// waiting for the cache's next periodic sweep.
     static func applyPosterSizeLimit(_ limit: PosterCacheSizeLimit) async {
@@ -114,4 +149,42 @@ extension DataCache.Swiftfin {
             }
         }
     }()
+}
+
+/// Reads from the size-limited poster cache first, then from the pinned thumbnails.
+///
+/// New downloads only go to the poster cache. Pinned thumbnails are written
+/// by `FolderIndexStore`, which knows which folders are pinned.
+final class PinnedFallbackDataCache: DataCaching, @unchecked Sendable {
+
+    private let primary: DataCache
+    private let pinned: DataCache?
+
+    init(primary: DataCache, pinned: DataCache?) {
+        self.primary = primary
+        self.pinned = pinned
+    }
+
+    func cachedData(for key: String) -> Data? {
+        primary.cachedData(for: key) ?? pinned?.cachedData(for: key)
+    }
+
+    func containsData(for key: String) -> Bool {
+        primary.containsData(for: key) || pinned?.containsData(for: key) == true
+    }
+
+    func storeData(_ data: Data, for key: String) {
+        primary.storeData(data, for: key)
+    }
+
+    /// Removes the key from both caches, so a changed thumbnail never shows its old image.
+    func removeData(for key: String) {
+        primary.removeData(for: key)
+        pinned?.removeData(for: key)
+    }
+
+    /// Clears the poster cache only. Pinned thumbnails are cleared from the folder index settings.
+    func removeAll() {
+        primary.removeAll()
+    }
 }

@@ -83,7 +83,12 @@ struct PagingLibraryView<Library: PagingLibrary>: View where Library.Element: Li
     init(library: Library, displayTitle: String? = nil) {
         self.displayTitle = displayTitle
         self._parentLibraryStyle = StoredValue(.User.libraryStyle(id: library.parent.pagingLibraryID))
-        self._viewModel = StateObject(wrappedValue: PagingLibraryViewModel(library: library))
+        self._viewModel = StateObject(
+            wrappedValue: PagingLibraryViewModel(
+                library: library,
+                pageSize: (library as? ItemLibrary)?.folderPageSize ?? defaultPagingLibraryPageSize
+            )
+        )
     }
 
     private func contentInsets(for frame: FrameAndSafeAreaInsets) -> EdgeInsets {

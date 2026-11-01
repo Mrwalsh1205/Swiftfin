@@ -84,6 +84,8 @@ internal enum L10n {
   internal static let albums = L10n.tr("Localizable", "albums", fallback: "Albums")
   /// All
   internal static let all = L10n.tr("Localizable", "all", fallback: "All")
+  /// All at once
+  internal static let allAtOnce = L10n.tr("Localizable", "allAtOnce", fallback: "All at once")
   /// All audiences
   internal static let allAudiences = L10n.tr("Localizable", "allAudiences", fallback: "All audiences")
   /// All channels
@@ -94,6 +96,8 @@ internal enum L10n {
   internal static let allEpisodes = L10n.tr("Localizable", "allEpisodes", fallback: "All episodes")
   /// All languages
   internal static let allLanguages = L10n.tr("Localizable", "allLanguages", fallback: "All languages")
+  /// All levels
+  internal static let allLevels = L10n.tr("Localizable", "allLevels", fallback: "All levels")
   /// Allow
   internal static let allow = L10n.tr("Localizable", "allow", fallback: "Allow")
   /// Allowed
@@ -270,6 +274,10 @@ internal enum L10n {
   internal static let brightness = L10n.tr("Localizable", "brightness", fallback: "Brightness")
   /// Bugs and features
   internal static let bugsAndFeatures = L10n.tr("Localizable", "bugsAndFeatures", fallback: "Bugs and features")
+  /// Build index
+  internal static let buildIndex = L10n.tr("Localizable", "buildIndex", fallback: "Build index")
+  /// Building the index…
+  internal static let buildingIndex = L10n.tr("Localizable", "buildingIndex", fallback: "Building the index…")
   /// Buttons
   internal static let buttons = L10n.tr("Localizable", "buttons", fallback: "Buttons")
   /// Cancel
@@ -528,6 +536,10 @@ internal enum L10n {
   internal static let decrement = L10n.tr("Localizable", "decrement", fallback: "Decrement")
   /// Default
   internal static let `default` = L10n.tr("Localizable", "default", fallback: "Default")
+  /// Default (%@)
+  internal static func defaultDepth(_ p1: Any) -> String {
+    return L10n.tr("Localizable", "defaultDepth", String(describing: p1), fallback: "Default (%@)")
+  }
   /// Admins are locked out after 5 failed attempts. Non-admins are locked out after 3 attempts.
   internal static let defaultFailedLoginDescription = L10n.tr("Localizable", "defaultFailedLoginDescription", fallback: "Admins are locked out after 5 failed attempts. Non-admins are locked out after 3 attempts.")
   /// Delete
@@ -756,6 +768,8 @@ internal enum L10n {
   internal static let favorites = L10n.tr("Localizable", "favorites", fallback: "Favorites")
   /// Featurette
   internal static let featurette = L10n.tr("Localizable", "featurette", fallback: "Featurette")
+  /// 50 at a time
+  internal static let fiftyAtATime = L10n.tr("Localizable", "fiftyAtATime", fallback: "50 at a time")
   /// File
   internal static let file = L10n.tr("Localizable", "file", fallback: "File")
   /// Fill
@@ -764,10 +778,22 @@ internal enum L10n {
   internal static let filters = L10n.tr("Localizable", "filters", fallback: "Filters")
   /// Folder
   internal static let folder = L10n.tr("Localizable", "folder", fallback: "Folder")
+  /// Folder index
+  internal static let folderIndex = L10n.tr("Localizable", "folderIndex", fallback: "Folder index")
+  /// All levels lists every video below a folder. One level lists only the videos directly inside it. Folders only lists its subfolders, and its videos load when you open it. Without a choice, libraries and the folders directly inside them follow New folders.
+  internal static let folderIndexDepthDescription = L10n.tr("Localizable", "folderIndexDepthDescription", fallback: "All levels lists every video below a folder. One level lists only the videos directly inside it. Folders only lists its subfolders, and its videos load when you open it. Without a choice, libraries and the folders directly inside them follow New folders.")
+  /// Lists every folder once and saves the list on this phone, so the folder pane on Home opens right away and can find any folder.
+  internal static let folderIndexDescription = L10n.tr("Localizable", "folderIndexDescription", fallback: "Lists every folder once and saves the list on this phone, so the folder pane on Home opens right away and can find any folder.")
+  /// The folder index is off. Turn it on in Index settings to browse every folder from here.
+  internal static let folderIndexOff = L10n.tr("Localizable", "folderIndexOff", fallback: "The folder index is off. Turn it on in Index settings to browse every folder from here.")
   /// Folder previews
   internal static let folderPreviews = L10n.tr("Localizable", "folderPreviews", fallback: "Folder previews")
   /// Folders
   internal static let folders = L10n.tr("Localizable", "folders", fallback: "Folders")
+  /// Folders only
+  internal static let foldersOnly = L10n.tr("Localizable", "foldersOnly", fallback: "Folders only")
+  /// Folders only, videos load when opened
+  internal static let foldersOnlyNote = L10n.tr("Localizable", "foldersOnlyNote", fallback: "Folders only, videos load when opened")
   /// Forced
   internal static let forced = L10n.tr("Localizable", "forced", fallback: "Forced")
   /// Forces HDR to transcode from the server instead of allowing the player to tone map it.
@@ -844,6 +870,10 @@ internal enum L10n {
   internal static let hidden = L10n.tr("Localizable", "hidden", fallback: "Hidden")
   /// Hide
   internal static let hide = L10n.tr("Localizable", "hide", fallback: "Hide")
+  /// Hide folders in %@
+  internal static func hideSubfolders(_ p1: Any) -> String {
+    return L10n.tr("Localizable", "hideSubfolders", String(describing: p1), fallback: "Hide folders in %@")
+  }
   /// Hide user from login screen
   internal static let hideUserFromLoginScreen = L10n.tr("Localizable", "hideUserFromLoginScreen", fallback: "Hide user from login screen")
   /// Hint
@@ -858,6 +888,10 @@ internal enum L10n {
   internal static let hours = L10n.tr("Localizable", "hours", fallback: "Hours")
   /// HH
   internal static let hoursLabel = L10n.tr("Localizable", "hoursLabel", fallback: "HH")
+  /// How deep each folder goes
+  internal static let howDeepEachFolderGoes = L10n.tr("Localizable", "howDeepEachFolderGoes", fallback: "How deep each folder goes")
+  /// How deep to index
+  internal static let howDeepToIndex = L10n.tr("Localizable", "howDeepToIndex", fallback: "How deep to index")
   /// ID
   internal static let id = L10n.tr("Localizable", "id", fallback: "ID")
   /// Identify
@@ -886,8 +920,22 @@ internal enum L10n {
   internal static let increment = L10n.tr("Localizable", "increment", fallback: "Increment")
   /// Index
   internal static let index = L10n.tr("Localizable", "index", fallback: "Index")
+  /// Couldn't update the index: %@
+  internal static func indexFailed(_ p1: Any) -> String {
+    return L10n.tr("Localizable", "indexFailed", String(describing: p1), fallback: "Couldn't update the index: %@")
+  }
   /// Index number
   internal static let indexNumber = L10n.tr("Localizable", "indexNumber", fallback: "Index number")
+  /// Index settings
+  internal static let indexSettings = L10n.tr("Localizable", "indexSettings", fallback: "Index settings")
+  /// Index ready · %@ items in %@ folders
+  internal static func indexSummary(_ p1: Any, _ p2: Any) -> String {
+    return L10n.tr("Localizable", "indexSummary", String(describing: p1), String(describing: p2), fallback: "Index ready · %@ items in %@ folders")
+  }
+  /// Updated %@
+  internal static func indexUpdated(_ p1: Any) -> String {
+    return L10n.tr("Localizable", "indexUpdated", String(describing: p1), fallback: "Updated %@")
+  }
   /// Indicator
   internal static let indicator = L10n.tr("Localizable", "indicator", fallback: "Indicator")
   /// Indicators
@@ -942,6 +990,16 @@ internal enum L10n {
   internal static let jumpForward = L10n.tr("Localizable", "jumpForward", fallback: "Jump forward")
   /// Jump forward length
   internal static let jumpForwardLength = L10n.tr("Localizable", "jumpForwardLength", fallback: "Jump forward length")
+  /// Keep a folder index
+  internal static let keepFolderIndex = L10n.tr("Localizable", "keepFolderIndex", fallback: "Keep a folder index")
+  /// Keep pinned thumbnails
+  internal static let keepPinnedThumbnails = L10n.tr("Localizable", "keepPinnedThumbnails", fallback: "Keep pinned thumbnails")
+  /// Pinned folders list every video inside, and their thumbnails are saved separately so they are never cleared to make room. Pin a folder by long-pressing it in the folder pane.
+  internal static let keepPinnedThumbnailsDescription = L10n.tr("Localizable", "keepPinnedThumbnailsDescription", fallback: "Pinned folders list every video inside, and their thumbnails are saved separately so they are never cleared to make room. Pin a folder by long-pressing it in the folder pane.")
+  /// Keep thumbnails
+  internal static let keepThumbnails = L10n.tr("Localizable", "keepThumbnails", fallback: "Keep thumbnails")
+  /// Kept thumbnails
+  internal static let keptThumbnails = L10n.tr("Localizable", "keptThumbnails", fallback: "Kept thumbnails")
   /// Kids
   internal static let kids = L10n.tr("Localizable", "kids", fallback: "Kids")
   /// kbps
@@ -1016,6 +1074,10 @@ internal enum L10n {
   internal static let liveTVPrograms = L10n.tr("Localizable", "liveTVPrograms", fallback: "Live TV programs")
   /// Live TV recording management
   internal static let liveTVRecordingManagement = L10n.tr("Localizable", "liveTVRecordingManagement", fallback: "Live TV recording management")
+  /// Load a folder
+  internal static let loadAFolder = L10n.tr("Localizable", "loadAFolder", fallback: "Load a folder")
+  /// Loading and thumbnails
+  internal static let loadingAndThumbnails = L10n.tr("Localizable", "loadingAndThumbnails", fallback: "Loading and thumbnails")
   /// Local
   internal static let local = L10n.tr("Localizable", "local", fallback: "Local")
   /// Local servers
@@ -1048,6 +1110,8 @@ internal enum L10n {
   internal static let management = L10n.tr("Localizable", "management", fallback: "Management")
   /// Delete, upload, or search for external subtitles.
   internal static let manageSubtitlesDescription = L10n.tr("Localizable", "manageSubtitlesDescription", fallback: "Delete, upload, or search for external subtitles.")
+  /// Manually
+  internal static let manually = L10n.tr("Localizable", "manually", fallback: "Manually")
   /// Manual playlists folder
   internal static let manualPlaylistsFolder = L10n.tr("Localizable", "manualPlaylistsFolder", fallback: "Manual playlists folder")
   /// Manual playlists folders
@@ -1162,6 +1226,8 @@ internal enum L10n {
   internal static let neverRun = L10n.tr("Localizable", "neverRun", fallback: "Never run")
   /// New episodes only
   internal static let newEpisodesOnly = L10n.tr("Localizable", "newEpisodesOnly", fallback: "New episodes only")
+  /// New folders
+  internal static let newFolders = L10n.tr("Localizable", "newFolders", fallback: "New folders")
   /// New password
   internal static let newPassword = L10n.tr("Localizable", "newPassword", fallback: "New password")
   /// News
@@ -1188,6 +1254,8 @@ internal enum L10n {
   internal static let noDeviceProfileWarning = L10n.tr("Localizable", "noDeviceProfileWarning", fallback: "No profiles defined. Playback issues may occur.")
   /// No episodes available
   internal static let noEpisodesAvailable = L10n.tr("Localizable", "noEpisodesAvailable", fallback: "No episodes available")
+  /// No index yet
+  internal static let noIndexYet = L10n.tr("Localizable", "noIndexYet", fallback: "No index yet")
   /// No items
   internal static let noItems = L10n.tr("Localizable", "noItems", fallback: "No items")
   /// No limit
@@ -1216,14 +1284,22 @@ internal enum L10n {
   internal static let on = L10n.tr("Localizable", "on", fallback: "On")
   /// On application startup
   internal static let onApplicationStartup = L10n.tr("Localizable", "onApplicationStartup", fallback: "On application startup")
+  /// Once a day
+  internal static let onceADay = L10n.tr("Localizable", "onceADay", fallback: "Once a day")
   /// One channel
   internal static let oneChannel = L10n.tr("Localizable", "oneChannel", fallback: "One channel")
+  /// One level
+  internal static let oneLevel = L10n.tr("Localizable", "oneLevel", fallback: "One level")
   /// Only forced
   internal static let onlyForced = L10n.tr("Localizable", "onlyForced", fallback: "Only forced")
   /// On Now
   internal static let onNow = L10n.tr("Localizable", "onNow", fallback: "On Now")
   /// Opacity
   internal static let opacity = L10n.tr("Localizable", "opacity", fallback: "Opacity")
+  /// Open
+  internal static let open = L10n.tr("Localizable", "open", fallback: "Open")
+  /// Open folder pane
+  internal static let openFolderPane = L10n.tr("Localizable", "openFolderPane", fallback: "Open folder pane")
   /// Open in player at this time
   internal static let openInPlayerAtThisTime = L10n.tr("Localizable", "openInPlayerAtThisTime", fallback: "Open in player at this time")
   /// Open library
@@ -1304,6 +1380,8 @@ internal enum L10n {
   internal static let pin = L10n.tr("Localizable", "pin", fallback: "Pin")
   /// Pinch
   internal static let pinch = L10n.tr("Localizable", "pinch", fallback: "Pinch")
+  /// Pinned folders
+  internal static let pinnedFolders = L10n.tr("Localizable", "pinnedFolders", fallback: "Pinned folders")
   /// Pixel format
   internal static let pixelFormat = L10n.tr("Localizable", "pixelFormat", fallback: "Pixel format")
   /// Play
@@ -1482,6 +1560,10 @@ internal enum L10n {
   internal static let ratings = L10n.tr("Localizable", "ratings", fallback: "Ratings")
   /// Real Frame Rate
   internal static let realFrameRate = L10n.tr("Localizable", "realFrameRate", fallback: "Real Frame Rate")
+  /// Rebuild index
+  internal static let rebuildIndex = L10n.tr("Localizable", "rebuildIndex", fallback: "Rebuild index")
+  /// Folder choices and kept thumbnails stay. Only the list of folders and videos is built again.
+  internal static let rebuildIndexDescription = L10n.tr("Localizable", "rebuildIndexDescription", fallback: "Folder choices and kept thumbnails stay. Only the list of folders and videos is built again.")
   /// Recently added
   internal static let recentlyAdded = L10n.tr("Localizable", "recentlyAdded", fallback: "Recently added")
   /// Recently played
@@ -1508,6 +1590,8 @@ internal enum L10n {
   internal static let refreshMetadata = L10n.tr("Localizable", "refreshMetadata", fallback: "Refresh metadata")
   /// Refresh mode
   internal static let refreshMode = L10n.tr("Localizable", "refreshMode", fallback: "Refresh mode")
+  /// Refresh this folder
+  internal static let refreshThisFolder = L10n.tr("Localizable", "refreshThisFolder", fallback: "Refresh this folder")
   /// Regional
   internal static let regional = L10n.tr("Localizable", "regional", fallback: "Regional")
   /// Regular
@@ -1622,6 +1706,10 @@ internal enum L10n {
   internal static let save = L10n.tr("Localizable", "save", fallback: "Save")
   /// Save the user to this device without any local authentication.
   internal static let saveUserWithoutAuthDescription = L10n.tr("Localizable", "saveUserWithoutAuthDescription", fallback: "Save the user to this device without any local authentication.")
+  /// Saving thumbnails %@ of %@
+  internal static func savingThumbnails(_ p1: Any, _ p2: Any) -> String {
+    return L10n.tr("Localizable", "savingThumbnails", String(describing: p1), String(describing: p2), fallback: "Saving thumbnails %@ of %@")
+  }
   /// Scan for new and update files
   internal static let scanForNewAndUpdatedFiles = L10n.tr("Localizable", "scanForNewAndUpdatedFiles", fallback: "Scan for new and update files")
   /// Scene
@@ -1640,6 +1728,8 @@ internal enum L10n {
   internal static let scrub = L10n.tr("Localizable", "scrub", fallback: "Scrub")
   /// Search
   internal static let search = L10n.tr("Localizable", "search", fallback: "Search")
+  /// Search every folder
+  internal static let searchEveryFolder = L10n.tr("Localizable", "searchEveryFolder", fallback: "Search every folder")
   /// Search for missing metadata
   internal static let searchForMissingMetadata = L10n.tr("Localizable", "searchForMissingMetadata", fallback: "Search for missing metadata")
   /// Season
@@ -1718,6 +1808,10 @@ internal enum L10n {
   internal static let showProgress = L10n.tr("Localizable", "showProgress", fallback: "Show progress")
   /// Show recommendations
   internal static let showRecommendations = L10n.tr("Localizable", "showRecommendations", fallback: "Show recommendations")
+  /// Show folders in %@
+  internal static func showSubfolders(_ p1: Any) -> String {
+    return L10n.tr("Localizable", "showSubfolders", String(describing: p1), fallback: "Show folders in %@")
+  }
   /// Show title - Controls title visibility on media posters. People and chapter titles, and episode season and episode locators, remain visible.
   internal static let showTitle = L10n.tr("Localizable", "showTitle", fallback: "Show title")
   /// Show unwatched
@@ -1980,6 +2074,8 @@ internal enum L10n {
   internal static let tvShows = L10n.tr("Localizable", "tvShows", fallback: "TV shows")
   /// TV Shows
   internal static let tvShowsCapitalized = L10n.tr("Localizable", "tvShowsCapitalized", fallback: "TV Shows")
+  /// 200 at a time
+  internal static let twoHundredAtATime = L10n.tr("Localizable", "twoHundredAtATime", fallback: "200 at a time")
   /// Type
   internal static let type = L10n.tr("Localizable", "type", fallback: "Type")
   /// Unable to find host
@@ -2022,6 +2118,12 @@ internal enum L10n {
   internal static let unreleased = L10n.tr("Localizable", "unreleased", fallback: "Unreleased")
   /// You have unsaved changes. Are you sure you want to discard them?
   internal static let unsavedChangesMessage = L10n.tr("Localizable", "unsavedChangesMessage", fallback: "You have unsaved changes. Are you sure you want to discard them?")
+  /// Update automatically
+  internal static let updateAutomatically = L10n.tr("Localizable", "updateAutomatically", fallback: "Update automatically")
+  /// Update index now
+  internal static let updateIndexNow = L10n.tr("Localizable", "updateIndexNow", fallback: "Update index now")
+  /// Updating the index…
+  internal static let updatingIndex = L10n.tr("Localizable", "updatingIndex", fallback: "Updating the index…")
   /// Upload file
   internal static let uploadFile = L10n.tr("Localizable", "uploadFile", fallback: "Upload file")
   /// Upload photo
@@ -2112,6 +2214,8 @@ internal enum L10n {
   internal static let weekend = L10n.tr("Localizable", "weekend", fallback: "Weekend")
   /// Weekly
   internal static let weekly = L10n.tr("Localizable", "weekly", fallback: "Weekly")
+  /// When the app opens
+  internal static let whenAppOpens = L10n.tr("Localizable", "whenAppOpens", fallback: "When the app opens")
   /// Wi-Fi
   internal static let wifi = L10n.tr("Localizable", "wifi", fallback: "Wi-Fi")
   /// Wi-Fi Name

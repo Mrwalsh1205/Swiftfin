@@ -204,6 +204,10 @@ extension Defaults.Keys {
                 UserKey("libraryThumbnailSize", default: .medium)
             }
 
+            static var loadAmount: Key<LibraryLoadAmount> {
+                UserKey("libraryLoadAmount", default: .allAtOnce)
+            }
+
             static var style: Key<LibraryStyle> {
                 UserKey(
                     "libraryStyle",
@@ -264,6 +268,25 @@ extension Defaults.Keys {
 
             static var showMyMedia: Key<Bool> {
                 UserKey("homeShowMyMedia", default: true)
+            }
+        }
+
+        enum FolderIndex {
+
+            static var isEnabled: Key<Bool> {
+                UserKey("folderIndexEnabled", default: true)
+            }
+
+            static var defaultDepth: Key<FolderIndexDepth> {
+                UserKey("folderIndexDefaultDepth", default: .oneLevel)
+            }
+
+            static var updateFrequency: Key<FolderIndexUpdateFrequency> {
+                UserKey("folderIndexUpdateFrequency", default: .whenAppOpens)
+            }
+
+            static var keepPinnedThumbnails: Key<Bool> {
+                UserKey("folderIndexKeepPinnedThumbnails", default: true)
             }
         }
 

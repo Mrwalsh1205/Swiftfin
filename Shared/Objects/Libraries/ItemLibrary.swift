@@ -68,6 +68,21 @@ struct ItemLibrary: MediaLibrary, SearchablePagingLibrary, WithRandomElementLibr
         self.parent = parent
     }
 
+    /// How many items library and folder views ask for at a time, from the "Load a folder" setting.
+    /// Home rows, search and other lists keep the standard page size.
+    var folderPageSize: Int? {
+        #if os(iOS)
+        switch parent.type {
+        case .collectionFolder, .folder, .photoAlbum, .userView:
+            return Defaults[.Customization.Library.loadAmount].pageSize
+        default:
+            return nil
+        }
+        #else
+        return nil
+        #endif
+    }
+
     func makeMenuContent(environment: Binding<Environment>) -> AnyView {
         Group {
             if let groupings = parent.groupings, groupings.elements.isNotEmpty {

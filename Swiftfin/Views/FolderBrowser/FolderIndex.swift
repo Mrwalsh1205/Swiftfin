@@ -90,8 +90,8 @@ final class FolderIndex: ObservableObject {
         var result: [BaseItemDto] = []
         var current: String? = id
 
-        while let currentID = current, let folder = folder(id: currentID) {
-            result.insert(folder, at: 0)
+        while let currentID = current, let found = self.folder(id: currentID) {
+            result.insert(found, at: 0)
             current = parents[currentID]
         }
 

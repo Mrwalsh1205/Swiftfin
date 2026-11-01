@@ -139,6 +139,7 @@ private struct FolderBrowserGestures: ViewModifier {
 
     let entry: ItemEntry
 
+    @ViewBuilder
     func body(content: Content) -> some View {
         let item = entry.snapshot
 

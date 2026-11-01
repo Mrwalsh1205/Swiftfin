@@ -230,13 +230,13 @@ enum FolderBrowserFormat {
         let total = max(0, Int(seconds.rounded()))
         let hours = total / 3600
         let minutes = total % 3600 / 60
-        let seconds = total % 60
+        let remainder = total % 60
 
         if hours > 0 {
-            return String(format: "%d:%02d:%02d", hours, minutes, seconds)
+            return String(format: "%d:%02d:%02d", hours, minutes, remainder)
         }
 
-        return String(format: "%d:%02d", minutes, seconds)
+        return String(format: "%d:%02d", minutes, remainder)
     }
 
     static func runtimeSeconds(of item: BaseItemDto) -> Double? {
@@ -264,8 +264,8 @@ enum FolderBrowserFormat {
             return L10n.played
         }
 
-        if let progress = progress(of: item), let runtime = runtimeSeconds(of: item) {
-            return L10n.durationLeft(timecode(seconds: runtime * (1 - progress)))
+        if let fraction = progress(of: item), let seconds = runtimeSeconds(of: item) {
+            return L10n.durationLeft(timecode(seconds: seconds * (1 - fraction)))
         }
 
         if let dateCreated = item.dateCreated {
@@ -288,7 +288,7 @@ enum FolderBrowserFormat {
             return seriesName
         }
 
-        return item.productionYear.map(String.init) ?? ""
+        return item.productionYear.map { String($0) } ?? ""
     }
 
     static func systemImage(for library: BaseItemDto) -> String {

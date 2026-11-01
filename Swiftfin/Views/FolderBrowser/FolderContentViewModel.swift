@@ -34,6 +34,35 @@ final class FolderContentViewModel: ObservableObject {
     /// Bumped by each reload, so a cancelled load can't touch the next one's state
     private var generation = 0
 
+    /// The settings the entries were loaded with, so a kept page knows when they changed
+    private struct LoadOptions: Equatable {
+
+        let sort: FolderBrowserSort
+        let showFolders: Bool
+        let loadMode: FolderLoadMode
+
+        static var current: LoadOptions {
+            LoadOptions(
+                sort: Defaults[.Customization.FolderBrowser.sort],
+                showFolders: Defaults[.Customization.FolderBrowser.showFolders],
+                loadMode: Defaults[.Customization.FolderBrowser.loadMode]
+            )
+        }
+    }
+
+    private var loadedOptions: LoadOptions?
+
+    /// A folder page loaded under settings that have since changed. Home ignores them.
+    var isStale: Bool {
+        guard folder != nil, let loadedOptions else { return false }
+
+        let current = LoadOptions.current
+
+        return loadedOptions.sort != current.sort
+            || loadedOptions.showFolders != current.showFolders
+            || (usesLoadMode && loadedOptions.loadMode != current.loadMode)
+    }
+
     init(folder: BaseItemDto?, rootLibrary: BaseItemDto?) {
         self.folder = folder
 
@@ -49,6 +78,7 @@ final class FolderContentViewModel: ObservableObject {
         nextIndex = 0
         hasMore = false
         error = nil
+        loadedOptions = .current
 
         let current = generation
         loadTask = Task { await loadPage(generation: current) }

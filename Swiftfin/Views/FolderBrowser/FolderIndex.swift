@@ -224,6 +224,7 @@ final class FolderIndex: ObservableObject {
             self.libraries = libraries
 
             await applyCounts(to: &libraries, userSession: userSession)
+            self.libraries = libraries
 
             var folders: [String: BaseItemDto] = [:]
             var children: [String: [String]] = [:]
@@ -240,8 +241,26 @@ final class FolderIndex: ObservableObject {
                 do {
                     libraryFolders = try await requestFolders(in: libraryID, userSession: userSession)
                 } catch {
-                    // One library failing (Live TV, a plugin) shouldn't lose the others
+                    // One library failing (Live TV, a plugin) shouldn't lose the others,
+                    // nor what the last index already knew about this library.
                     failed += 1
+
+                    if loadedKey == key, let old = snapshot {
+                        var queue = old.children[libraryID] ?? []
+                        children[libraryID] = queue
+
+                        while let id = queue.popLast() {
+                            if let folder = old.folders[id] {
+                                folders[id] = folder
+                            }
+
+                            if let kids = old.children[id] {
+                                children[id] = kids
+                                queue += kids
+                            }
+                        }
+                    }
+
                     continue
                 }
 
@@ -273,13 +292,14 @@ final class FolderIndex: ObservableObject {
 
             let newSnapshot = Snapshot(libraries: libraries, folders: folders, children: children, date: .now)
 
-            // The user may have signed in as someone else while this ran.
-            guard currentKey() == key else { return }
+            // The user may have signed in as someone else, or switched the index off, while this ran.
+            guard currentKey() == key, Defaults[.Customization.FolderBrowser.indexEnabled] else { return }
 
             snapshot = newSnapshot
             loadedKey = key
             rebuildParents()
             save(newSnapshot, for: key)
+            didFail = failed > 0
 
             // Pinned folders pick up videos added since they were pinned
             Task {

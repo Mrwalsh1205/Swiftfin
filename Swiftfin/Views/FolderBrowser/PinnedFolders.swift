@@ -140,8 +140,12 @@ final class PinnedFolders: ObservableObject {
             let key = DataCache.Swiftfin.pinnedKey(for: fullKey)
 
             if !pinnedCache.containsData(for: key) {
-                if let data = DataCache.Swiftfin.posters?.cachedData(for: fullKey) {
-                    pinnedCache.storeData(data, for: key)
+                // Reading the poster cache hits the disk, so do it off the main thread
+                let posters = DataCache.Swiftfin.posters
+                let cached = await Task.detached(priority: .utility) { posters?.cachedData(for: fullKey) }.value
+
+                if let cached {
+                    pinnedCache.storeData(cached, for: key)
                 } else {
                     // Download without also filling the size-limited cache
                     let request = ImageRequest(url: url, options: [.disableDiskCacheWrites])

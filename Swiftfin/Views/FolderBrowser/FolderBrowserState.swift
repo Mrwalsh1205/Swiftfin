@@ -96,8 +96,13 @@ final class FolderBrowserState: ObservableObject {
         return viewModel
     }
 
-    func reloadPage() {
+    /// Loads the shown folder again, and the given folder when it is a different, already loaded one
+    func reloadPage(for folder: BaseItemDto? = nil) {
         pageReloadToken += 1
+
+        if let id = folder?.id, id != currentFolder?.id {
+            viewModels[id]?.reload()
+        }
     }
 
     // MARK: Navigation

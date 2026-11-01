@@ -109,7 +109,7 @@ struct FolderPageView: View {
             await viewModel.reloadAndWait()
         }
         .onAppear {
-            if viewModel.entries.isEmpty, !viewModel.isLoading {
+            if viewModel.isStale || (viewModel.entries.isEmpty && !viewModel.isLoading) {
                 viewModel.reload()
             }
         }

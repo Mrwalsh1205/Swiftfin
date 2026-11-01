@@ -116,6 +116,11 @@ struct FolderTreePanel: View {
     @ObservedObject
     private var files = FolderTreeFiles.shared
 
+    /// Armed when a highlight arrives, cleared by the first scroll that reaches its row,
+    /// so file lists loading for other folders don't scroll the pane back.
+    @State
+    private var isScrollToHighlightPending = false
+
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -137,12 +142,16 @@ struct FolderTreePanel: View {
                 }
                 .onAppear {
                     loadExpandedFiles()
+                    isScrollToHighlightPending = state.highlightedID != nil
                     scrollToHighlight(proxy, animated: false)
                 }
                 .onChange(of: state.highlightedID) {
+                    isScrollToHighlightPending = state.highlightedID != nil
                     scrollToHighlight(proxy, animated: true)
                 }
                 .onChange(of: files.files.count) {
+                    guard isScrollToHighlightPending else { return }
+
                     scrollToHighlight(proxy, animated: true)
                 }
                 .onChange(of: state.expandedIDs) {
@@ -243,6 +252,8 @@ struct FolderTreePanel: View {
         guard let highlightedID = state.highlightedID,
               let target = rows.first(where: { $0.entry.itemID == highlightedID })?.id
         else { return }
+
+        isScrollToHighlightPending = false
 
         if animated {
             withAnimation {
@@ -526,6 +537,10 @@ struct FolderTreePanel: View {
     private var statusDetail: String {
         guard indexEnabled, let date = index.snapshot?.date else {
             return L10n.indexOffDescription
+        }
+
+        if index.didFail {
+            return L10n.folderIndexFailed
         }
 
         return L10n.indexSavedDescription(date.formatted(.relative(presentation: .named)))

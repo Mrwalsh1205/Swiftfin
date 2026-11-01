@@ -271,11 +271,10 @@ private struct FolderBrowserHost: ViewModifier {
                 await FolderIndex.shared.prepare()
             }
             .onChange(of: indexEnabled) { _, isEnabled in
-                if isEnabled {
-                    Task { await FolderIndex.shared.update() }
-                } else {
-                    FolderIndex.shared.clear()
-                }
+                // The saved index stays on disk while off, so pinned folders keep their names
+                guard isEnabled else { return }
+
+                Task { await FolderIndex.shared.update() }
             }
     }
 }

@@ -215,7 +215,7 @@ struct SwiftfinPlusSettingsView: View {
                     Text(indexStatus)
                         .font(.subheadline)
 
-                    if let date = index.snapshot?.date {
+                    if indexEnabled, let date = index.snapshot?.date {
                         Text(
                             L10n.indexUpdatedDetail(
                                 date.formatted(.relative(presentation: .named)),
@@ -268,6 +268,10 @@ struct SwiftfinPlusSettingsView: View {
         guard indexEnabled else { return L10n.indexOff }
 
         guard index.snapshot != nil else { return L10n.buildingFolderIndex }
+
+        if index.didFail {
+            return L10n.folderIndexFailed
+        }
 
         return L10n.indexReady(index.itemCount.formatted(), index.folderCount.formatted())
     }

@@ -340,8 +340,8 @@ internal enum L10n {
   internal static let clear = L10n.tr("Localizable", "clear", fallback: "Clear")
   /// Clear thumbnail cache
   internal static let clearThumbnailCache = L10n.tr("Localizable", "clearThumbnailCache", fallback: "Clear thumbnail cache")
-  /// Thumbnails will download again from your server as you browse, and folders will pick new previews.
-  internal static let clearThumbnailCacheMessage = L10n.tr("Localizable", "clearThumbnailCacheMessage", fallback: "Thumbnails will download again from your server as you browse, and folders will pick new previews.")
+  /// Thumbnails will download again from your server as you browse, folders will pick new previews, and pinned folders are unpinned.
+  internal static let clearThumbnailCacheMessage = L10n.tr("Localizable", "clearThumbnailCacheMessage", fallback: "Thumbnails will download again from your server as you browse, folders will pick new previews, and pinned folders are unpinned.")
   /// Client
   internal static let client = L10n.tr("Localizable", "client", fallback: "Client")
   /// Clip

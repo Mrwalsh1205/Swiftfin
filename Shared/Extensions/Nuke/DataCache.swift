@@ -73,10 +73,11 @@ extension DataCache.Swiftfin {
     }()
 
     /// The poster cache, falling back to pinned thumbnails once the poster cache has trimmed them.
+    ///
+    /// Without a poster cache there is nowhere size-limited to write, so nothing is cached at all
+    /// rather than filling the untrimmed pinned folder with every download.
     static let postersWithPinned: (any DataCaching)? = {
-        guard let posters = DataCache.Swiftfin.posters else {
-            return DataCache.Swiftfin.pinnedPosters
-        }
+        guard let posters = DataCache.Swiftfin.posters else { return nil }
 
         return PinnedFallbackDataCache(primary: posters, pinned: DataCache.Swiftfin.pinnedPosters)
     }()

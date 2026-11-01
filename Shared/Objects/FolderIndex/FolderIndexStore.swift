@@ -236,7 +236,12 @@ final class FolderIndexStore: ObservableObject {
 
     func keptThumbnailBytes() async -> Int {
         await Task.detached(priority: .utility) {
-            DataCache.Swiftfin.pinnedPosters?.totalAllocatedSize ?? 0
+            guard let pinned = DataCache.Swiftfin.pinnedPosters else { return 0 }
+
+            // Writes and removals land asynchronously, so wait for them before reading the size.
+            pinned.flush()
+
+            return pinned.totalAllocatedSize
         }.value
     }
 
@@ -338,12 +343,17 @@ final class FolderIndexStore: ObservableObject {
 
         guard Defaults[.Customization.FolderIndex.isEnabled] else { return }
 
-        work?.cancel()
         workGeneration += 1
 
         let generation = workGeneration
+        let previous = work
 
+        // Runs after whatever is already going, so a pin made during an update never cancels the update.
         work = Task {
+            await previous?.value
+
+            guard !Task.isCancelled else { return }
+
             await operation()
 
             if self.workGeneration == generation {
@@ -698,13 +708,17 @@ final class FolderIndexStore: ObservableObject {
 
     /// The thumbnail addresses library grids ask for, for every video in a pinned folder.
     private func keptThumbnailURLs(in snapshot: FolderIndexSnapshot) -> [URL] {
-        let style = Defaults[.Customization.Library.style]
+        let defaultStyle = Defaults[.Customization.Library.style]
+        let rememberLayout = Defaults[.Customization.Library.rememberLayout]
         let thumbnailSize = Defaults[.Customization.Library.thumbnailSize]
 
         var urls: [URL] = []
         var seenURLs: Set<URL> = []
 
         for (folderID, folderVideos) in snapshot.videos where isPinnedOrInsidePinned(folderID, in: snapshot) {
+            // The folder view's own layout decides the image width the library asks for.
+            let style = rememberLayout ? StoredValues[.User.libraryStyle(id: folderID)] : defaultStyle
+
             for video in folderVideos {
                 guard let item = video.thumbnail?.item,
                       let url = Self.thumbnailURL(for: item, style: style, thumbnailSize: thumbnailSize),
@@ -879,9 +893,14 @@ final class FolderIndexStore: ObservableObject {
     }
 
     private func save() {
-        guard let fileURL, let data = try? JSONEncoder().encode(records) else { return }
+        guard let fileURL else { return }
 
+        let records = records
+
+        // Encoding every user's index can take a moment, so it runs with the write.
         writeQueue.async {
+            guard let data = try? JSONEncoder().encode(records) else { return }
+
             try? FileManager.default.createDirectory(
                 at: fileURL.deletingLastPathComponent(),
                 withIntermediateDirectories: true

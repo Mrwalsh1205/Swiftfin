@@ -59,6 +59,13 @@ final class FolderBrowserState: ObservableObject {
     var router: Router.Wrapper?
     var toastProxy: ToastProxy?
 
+    /// Classic Home has no folder page of its own, so folders open as library pages.
+    let opensFoldersAsPages: Bool
+
+    init(opensFoldersAsPages: Bool = false) {
+        self.opensFoldersAsPages = opensFoldersAsPages
+    }
+
     var currentFolder: BaseItemDto? {
         path.last
     }
@@ -88,6 +95,13 @@ final class FolderBrowserState: ObservableObject {
     /// to it; without it the folder opens below the current one.
     func open(_ folder: BaseItemDto) {
         guard let id = folder.id else { return }
+
+        if opensFoldersAsPages {
+            isTreeOpen = false
+            highlightedID = nil
+            route(to: .library(library: ItemLibrary(parent: folder, filters: .default), displayTitle: folder.displayTitle))
+            return
+        }
 
         let indexedPath = FolderIndex.shared.path(to: id)
 

@@ -334,6 +334,8 @@ internal enum L10n {
   internal static let chapters = L10n.tr("Localizable", "chapters", fallback: "Chapters")
   /// Chapter slider
   internal static let chapterSlider = L10n.tr("Localizable", "chapterSlider", fallback: "Chapter slider")
+  /// Classic rows
+  internal static let classicRows = L10n.tr("Localizable", "classicRows", fallback: "Classic rows")
   /// Clear
   internal static let clear = L10n.tr("Localizable", "clear", fallback: "Clear")
   /// Clear thumbnail cache
@@ -802,6 +804,8 @@ internal enum L10n {
   internal static let filters = L10n.tr("Localizable", "filters", fallback: "Filters")
   /// Folder
   internal static let folder = L10n.tr("Localizable", "folder", fallback: "Folder")
+  /// Folder browser
+  internal static let folderBrowser = L10n.tr("Localizable", "folderBrowser", fallback: "Folder browser")
   /// Folder index
   internal static let folderIndex = L10n.tr("Localizable", "folderIndex", fallback: "Folder index")
   /// Couldn’t update the folder index. Pull down on a folder to try again.
@@ -834,6 +838,8 @@ internal enum L10n {
   internal static let foldersOnlyNote = L10n.tr("Localizable", "foldersOnlyNote", fallback: "Folders only, videos load when opened")
   /// Folder tree
   internal static let folderTree = L10n.tr("Localizable", "folderTree", fallback: "Folder tree")
+  /// Folder tree side
+  internal static let folderTreeSide = L10n.tr("Localizable", "folderTreeSide", fallback: "Folder tree side")
   /// Forced
   internal static let forced = L10n.tr("Localizable", "forced", fallback: "Forced")
   /// Forces HDR to transcode from the server instead of allowing the player to tone map it.
@@ -918,6 +924,12 @@ internal enum L10n {
   internal static let hint = L10n.tr("Localizable", "hint", fallback: "Hint")
   /// Home
   internal static let home = L10n.tr("Localizable", "home", fallback: "Home")
+  /// Home style
+  internal static let homeStyle = L10n.tr("Localizable", "homeStyle", fallback: "Home style")
+  /// Home keeps Continue Watching, Recently Added and My Media. The button at the top opens the folder tree; folders open as library pages.
+  internal static let homeStyleClassicDescription = L10n.tr("Localizable", "homeStyleClassicDescription", fallback: "Home keeps Continue Watching, Recently Added and My Media. The button at the top opens the folder tree; folders open as library pages.")
+  /// Home is a folder browser with breadcrumbs, and the folder tree sits on a narrow toolbar at the chosen edge.
+  internal static let homeStyleFolderBrowserDescription = L10n.tr("Localizable", "homeStyleFolderBrowserDescription", fallback: "Home is a folder browser with breadcrumbs, and the folder tree sits on a narrow toolbar at the chosen edge.")
   /// Horizontal pan
   internal static let horizontalPan = L10n.tr("Localizable", "horizontalPan", fallback: "Horizontal pan")
   /// Horizontal swipe

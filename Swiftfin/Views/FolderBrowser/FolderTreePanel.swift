@@ -505,8 +505,10 @@ struct FolderTreePanel: View {
 
 // MARK: Rail
 
-/// The narrow toolbar on the right: the folder pane button, libraries and pinned folders.
+/// The narrow toolbar at the tree's edge: the folder pane button, libraries and pinned folders.
 struct FolderBrowserRail: View {
+
+    let side: FolderTreeSide
 
     @Default(.Customization.FolderBrowser.pinnedFolderIDs)
     private var pinnedFolderIDs
@@ -598,7 +600,7 @@ struct FolderBrowserRail: View {
         }
         .frame(width: Self.width)
         .background(Color.systemBackground)
-        .overlay(alignment: .leading) {
+        .overlay(alignment: side == .left ? .trailing : .leading) {
             Rectangle()
                 .fill(Color.secondary.opacity(0.25))
                 .frame(width: 0.5)

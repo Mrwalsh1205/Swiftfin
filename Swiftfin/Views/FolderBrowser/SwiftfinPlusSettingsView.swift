@@ -14,6 +14,12 @@ import SwiftUI
 /// the folder index and the player. Changes apply right away and stay on this iPhone.
 struct SwiftfinPlusSettingsView: View {
 
+    // Home
+    @Default(.Customization.FolderBrowser.homeStyle)
+    private var homeStyle
+    @Default(.Customization.FolderBrowser.treeSide)
+    private var treeSide
+
     // Libraries
     @Default(.Customization.FolderBrowser.viewMode)
     private var viewMode
@@ -62,6 +68,8 @@ struct SwiftfinPlusSettingsView: View {
 
     var body: some View {
         Form(systemImage: "folder.badge.gearshape") {
+            homeSection
+
             librarySection
 
             CustomizeSettingsView.ThumbnailCacheSection()
@@ -88,6 +96,29 @@ struct SwiftfinPlusSettingsView: View {
             }
         }
         .navigationTitle(L10n.swiftfinPlus)
+    }
+
+    // MARK: Home
+
+    private var homeSection: some View {
+        Section {
+            Picker(L10n.homeStyle, selection: $homeStyle) {
+                ForEach(HomeStyle.allCases, id: \.self) {
+                    Text($0.displayTitle).tag($0)
+                }
+            }
+
+            Picker(L10n.folderTreeSide, selection: $treeSide) {
+                ForEach(FolderTreeSide.allCases, id: \.self) {
+                    Text($0.displayTitle).tag($0)
+                }
+            }
+            .pickerStyle(.segmented)
+        } header: {
+            Text(L10n.home)
+        } footer: {
+            Text(homeStyle == .folderBrowser ? L10n.homeStyleFolderBrowserDescription : L10n.homeStyleClassicDescription)
+        }
     }
 
     // MARK: Libraries
@@ -358,6 +389,8 @@ struct SwiftfinPlusSettingsView: View {
     }
 
     private func resetAll() {
+        reset(.Customization.FolderBrowser.homeStyle)
+        reset(.Customization.FolderBrowser.treeSide)
         reset(.Customization.FolderBrowser.viewMode)
         reset(.Customization.FolderBrowser.posterType)
         reset(.Customization.FolderBrowser.sort)

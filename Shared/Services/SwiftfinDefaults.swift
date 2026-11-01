@@ -244,6 +244,16 @@ extension Defaults.Keys {
         /// Swiftfin+ folder browser, the Home tab
         enum FolderBrowser {
 
+            /// Folder browser Home (v2 design) or the original Home rows with a folder pane (design board)
+            static var homeStyle: Key<HomeStyle> {
+                UserKey("swiftfinPlusHomeStyle", default: .folderBrowser)
+            }
+
+            /// Which edge the folder tree slides in from
+            static var treeSide: Key<FolderTreeSide> {
+                UserKey("swiftfinPlusFolderTreeSide", default: .right)
+            }
+
             static var viewMode: Key<FolderBrowserViewMode> {
                 UserKey("folderBrowserViewMode", default: .grid)
             }

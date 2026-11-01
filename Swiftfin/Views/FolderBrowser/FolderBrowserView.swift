@@ -11,12 +11,209 @@ import JellyfinAPI
 import SwiftUI
 
 private let treePanelMaxWidth: CGFloat = 300
+private let classicPaneMaxWidth: CGFloat = 340
+private let classicPaneWidthFraction: CGFloat = 0.85
+private let swipeToCloseDistance: CGFloat = 60
+private let treeAnimation: Animation = .snappy(duration: 0.28)
 
-/// Swiftfin+ Home: a file browser with a folder tree on a right-hand toolbar.
+// MARK: Home
+
+/// The Home tab. Settings › Swiftfin+ picks what it shows:
+/// the folder browser (v2 design) or the original Home rows with a folder pane (design board).
+struct SwiftfinPlusHomeView: View {
+
+    @Default(.Customization.FolderBrowser.homeStyle)
+    private var homeStyle
+
+    var body: some View {
+        switch homeStyle {
+        case .folderBrowser:
+            FolderBrowserView()
+        case .classic:
+            ClassicHomeWithFolderTree()
+        }
+    }
+}
+
+// MARK: Folder browser
+
+/// Swiftfin+ Home: a file browser with a folder tree on a toolbar at the chosen edge.
 ///
 /// There are no Continue Watching or Recently Added rows here. Folders show
 /// rotating previews of the videos inside them, so thumbnails guide every step.
 struct FolderBrowserView: View {
+
+    @Default(.Customization.FolderBrowser.treeSide)
+    private var side
+
+    @StateObject
+    private var state = FolderBrowserState()
+
+    var body: some View {
+        GeometryReader { proxy in
+            ZStack(alignment: side.alignment) {
+                FolderPageView(folder: state.currentFolder)
+                    .id(state.currentFolder?.id ?? "home")
+                    .padding(side.edge, FolderBrowserRail.width)
+                    .transition(.opacity)
+
+                FolderTreeOverlay(
+                    side: side,
+                    panelWidth: min(treePanelMaxWidth, proxy.size.width - FolderBrowserRail.width - 40),
+                    railInset: FolderBrowserRail.width
+                )
+
+                FolderBrowserRail(side: side)
+            }
+            .animation(.easeInOut(duration: 0.15), value: state.currentFolder?.id)
+        }
+        .toolbar(.hidden, for: .navigationBar)
+        .folderBrowserHost(state)
+    }
+}
+
+// MARK: Classic Home
+
+/// The original Home rows (Continue Watching, Recently Added, My Media and the rest),
+/// with a button that opens the folder tree over them. Folders open as library pages.
+struct ClassicHomeWithFolderTree: View {
+
+    @Default(.Customization.FolderBrowser.treeSide)
+    private var side
+
+    @StateObject
+    private var state = FolderBrowserState(opensFoldersAsPages: true)
+
+    var body: some View {
+        ContentGroupView(provider: DefaultContentGroupProvider())
+            .overlay {
+                GeometryReader { proxy in
+                    FolderTreeOverlay(
+                        side: side,
+                        panelWidth: min(classicPaneMaxWidth, proxy.size.width * classicPaneWidthFraction),
+                        railInset: 0
+                    )
+                }
+            }
+            .toolbar {
+                ToolbarItem(placement: side == .left ? .topBarLeading : .topBarTrailing) {
+                    Button {
+                        withAnimation(treeAnimation) {
+                            state.isTreeOpen.toggle()
+                            state.highlightedID = nil
+                        }
+                    } label: {
+                        Image(systemName: side == .left ? "sidebar.leading" : "sidebar.trailing")
+                    }
+                    .accessibilityLabel(L10n.folderTree)
+                }
+            }
+            .folderBrowserHost(state)
+    }
+}
+
+// MARK: Tree overlay
+
+/// The dimmed backdrop and the folder tree panel, sliding in from `side`.
+/// `railInset` keeps the folder browser's toolbar uncovered and tappable.
+struct FolderTreeOverlay: View {
+
+    @EnvironmentObject
+    private var state: FolderBrowserState
+
+    let side: FolderTreeSide
+    let panelWidth: CGFloat
+    let railInset: CGFloat
+
+    private var offset: CGFloat {
+        let hiddenDistance = panelWidth + railInset + 20
+
+        switch side {
+        case .left:
+            return state.isTreeOpen ? railInset : -hiddenDistance
+        case .right:
+            return state.isTreeOpen ? -railInset : hiddenDistance
+        }
+    }
+
+    private var panelShape: UnevenRoundedRectangle {
+        switch side {
+        case .left:
+            UnevenRoundedRectangle(bottomTrailingRadius: 14, topTrailingRadius: 14)
+        case .right:
+            UnevenRoundedRectangle(topLeadingRadius: 14, bottomLeadingRadius: 14)
+        }
+    }
+
+    private func close() {
+        withAnimation(treeAnimation) {
+            state.isTreeOpen = false
+            state.highlightedID = nil
+        }
+    }
+
+    var body: some View {
+        ZStack(alignment: side.alignment) {
+            if state.isTreeOpen {
+                Color.black
+                    .opacity(0.4)
+                    .padding(side.edge, railInset)
+                    .contentShape(Rectangle())
+                    .onTapGesture(perform: close)
+                    .accessibilityLabel(L10n.close)
+                    .accessibilityAddTraits(.isButton)
+                    .transition(.opacity)
+            }
+
+            FolderTreePanel()
+                .frame(width: max(0, panelWidth))
+                .clipShape(panelShape)
+                .shadow(color: .black.opacity(0.3), radius: 12, x: side == .left ? 2 : -2)
+                .offset(x: offset)
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 20)
+                        .onEnded { value in
+                            // Swipe the panel back toward its edge to close it
+                            let distance = side == .left ? -value.translation.width : value.translation.width
+
+                            if distance > swipeToCloseDistance {
+                                close()
+                            }
+                        }
+                )
+                .allowsHitTesting(state.isTreeOpen)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: side.alignment)
+        .animation(treeAnimation, value: state.isTreeOpen)
+    }
+}
+
+extension FolderTreeSide {
+
+    var alignment: Alignment {
+        switch self {
+        case .left:
+            .leading
+        case .right:
+            .trailing
+        }
+    }
+
+    var edge: Edge.Set {
+        switch self {
+        case .left:
+            .leading
+        case .right:
+            .trailing
+        }
+    }
+}
+
+// MARK: Host
+
+/// What both Home styles share: the browser state in the environment, its sheets,
+/// playback and routing, and keeping the folder index current.
+private struct FolderBrowserHost: ViewModifier {
 
     @Default(.Customization.FolderBrowser.indexDepths)
     private var indexDepths
@@ -31,82 +228,51 @@ struct FolderBrowserView: View {
     @Router
     private var router
 
-    @StateObject
-    private var state = FolderBrowserState()
-
     @ObservedObject
-    private var index = FolderIndex.shared
+    var state: FolderBrowserState
 
-    var body: some View {
-        GeometryReader { proxy in
-            let panelWidth = min(treePanelMaxWidth, proxy.size.width - FolderBrowserRail.width - 40)
-
-            ZStack(alignment: .trailing) {
-                FolderPageView(folder: state.currentFolder)
-                    .id(state.currentFolder?.id ?? "home")
-                    .padding(.trailing, FolderBrowserRail.width)
-                    .transition(.opacity)
-
-                if state.isTreeOpen {
-                    Color.black
-                        .opacity(0.4)
-                        .ignoresSafeArea(edges: .bottom)
-                        .padding(.trailing, FolderBrowserRail.width)
-                        .onTapGesture {
-                            withAnimation(.snappy(duration: 0.28)) {
-                                state.isTreeOpen = false
-                                state.highlightedID = nil
-                            }
-                        }
-                        .transition(.opacity)
-                }
-
-                FolderTreePanel()
-                    .frame(width: panelWidth)
-                    .clipShape(UnevenRoundedRectangle(topLeadingRadius: 14, bottomLeadingRadius: 14))
-                    .shadow(color: .black.opacity(0.3), radius: 12, x: -2)
-                    .offset(x: state.isTreeOpen ? -FolderBrowserRail.width : panelWidth + 20)
-                    .allowsHitTesting(state.isTreeOpen)
-
-                FolderBrowserRail()
-            }
-            .animation(.snappy(duration: 0.28), value: state.isTreeOpen)
-            .animation(.easeInOut(duration: 0.15), value: state.currentFolder?.id)
-        }
-        .environmentObject(state)
-        .toolbar(.hidden, for: .navigationBar)
-        .sheet(item: $state.sheet) { sheet in
-            Group {
-                switch sheet {
-                case let .item(entry):
-                    FolderItemActionSheet(entry: entry)
-                case let .folder(entry):
-                    FolderActionSheet(entry: entry)
-                case .options:
-                    FolderBrowserOptionsSheet()
-                }
-            }
+    func body(content: Content) -> some View {
+        content
             .environmentObject(state)
-            .environment(\.toastProxy, toastProxy)
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
-        }
-        .onAppear {
-            state.playAction = playMedia
-            state.router = router
-            state.toastProxy = toastProxy
-        }
-        .task {
-            await index.prepare()
-        }
-        .onChange(of: indexDepths) {
-            Task { await index.update() }
-        }
-        .onChange(of: indexEnabled) { _, isEnabled in
-            if isEnabled {
-                Task { await index.update() }
+            .sheet(item: $state.sheet) { sheet in
+                Group {
+                    switch sheet {
+                    case let .item(entry):
+                        FolderItemActionSheet(entry: entry)
+                    case let .folder(entry):
+                        FolderActionSheet(entry: entry)
+                    case .options:
+                        FolderBrowserOptionsSheet()
+                    }
+                }
+                .environmentObject(state)
+                .environment(\.toastProxy, toastProxy)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
             }
-        }
+            .onAppear {
+                state.playAction = playMedia
+                state.router = router
+                state.toastProxy = toastProxy
+            }
+            .task {
+                await FolderIndex.shared.prepare()
+            }
+            .onChange(of: indexDepths) {
+                Task { await FolderIndex.shared.update() }
+            }
+            .onChange(of: indexEnabled) { _, isEnabled in
+                if isEnabled {
+                    Task { await FolderIndex.shared.update() }
+                }
+            }
+    }
+}
+
+extension View {
+
+    fileprivate func folderBrowserHost(_ state: FolderBrowserState) -> some View {
+        modifier(FolderBrowserHost(state: state))
     }
 }
 
@@ -120,7 +286,7 @@ extension TabItem {
             title: L10n.home,
             systemImage: "house.fill"
         ) {
-            FolderBrowserView()
+            SwiftfinPlusHomeView()
         }
     }
 

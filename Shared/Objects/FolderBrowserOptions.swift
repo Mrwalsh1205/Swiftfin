@@ -9,6 +9,40 @@
 import CoreGraphics
 import Foundation
 
+/// What the Home tab shows.
+enum HomeStyle: String, CaseIterable, Displayable, Storable {
+
+    /// The v2 design: Home is a folder browser with a folder tree toolbar
+    case folderBrowser
+    /// The design board: the original Home rows, with a folder tree pane over them
+    case classic
+
+    var displayTitle: String {
+        switch self {
+        case .folderBrowser:
+            L10n.folderBrowser
+        case .classic:
+            L10n.classicRows
+        }
+    }
+}
+
+/// The edge the folder tree slides in from.
+enum FolderTreeSide: String, CaseIterable, Displayable, Storable {
+
+    case left
+    case right
+
+    var displayTitle: String {
+        switch self {
+        case .left:
+            L10n.left
+        case .right:
+            L10n.right
+        }
+    }
+}
+
 /// Grid of tiles or a list of rows in the folder browser.
 enum FolderBrowserViewMode: String, CaseIterable, Displayable, Storable {
 
@@ -90,6 +124,9 @@ enum FolderLoadMode: String, CaseIterable, Displayable, Storable {
     case all
     case twoHundred
     case fifty
+
+    /// Page size standing in for "everything" where a page size is required
+    static let allAtOncePageSize = 10000
 
     /// `nil` loads everything in one request.
     var pageSize: Int? {

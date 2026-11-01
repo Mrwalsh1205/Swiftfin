@@ -164,6 +164,15 @@ final class FolderPreviewStore {
         Defaults[.folderPreviewGeneration] += 1
     }
 
+    /// Forgets one folder's pick, so it picks new videos the next time it shows.
+    func reshuffle(folderID: String) {
+        guard let userSession = Container.shared.currentUserSession() else { return }
+
+        picks["\(userSession.server.id)-\(userSession.user.id)-\(folderID)"] = nil
+        save()
+        Defaults[.folderPreviewGeneration] += 1
+    }
+
     func markFailed(_ videoID: String) {
         failedVideoIDs.insert(videoID)
     }

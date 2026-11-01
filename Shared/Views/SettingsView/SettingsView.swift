@@ -27,6 +27,13 @@ struct SettingsView: View {
     @Router
     private var router
 
+    /// Off when Settings is a tab, where there's nothing to close
+    private let showsCloseButton: Bool
+
+    init(showsCloseButton: Bool = true) {
+        self.showsCloseButton = showsCloseButton
+    }
+
     // MARK: - Body
 
     var body: some View {
@@ -37,8 +44,10 @@ struct SettingsView: View {
         }
         #if os(iOS)
         .navigationTitle(L10n.settings)
-            .navigationBarCloseButton {
-                router.dismiss()
+            .if(showsCloseButton) { view in
+                view.navigationBarCloseButton {
+                    router.dismiss()
+                }
             }
         #endif
     }
@@ -119,6 +128,12 @@ struct SettingsView: View {
             #endif
 
             ColorPicker(L10n.accentColor, selection: $accentColor, supportsOpacity: false)
+
+            #if os(iOS)
+            ChevronButton(L10n.swiftfinPlus) {
+                router.route(to: .swiftfinPlusSettings)
+            }
+            #endif
 
             ChevronButton(L10n.advanced) {
                 router.route(to: .customizeSettingsView)

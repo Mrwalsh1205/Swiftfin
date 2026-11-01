@@ -38,6 +38,12 @@ extension VideoPlayer.PlaybackControls {
 
         @Default(.VideoPlayer.Overlay.chapterSlider)
         private var chapterSlider
+        @Default(.VideoPlayer.Overlay.scrubPreviewSize)
+        private var scrubPreviewSize
+        @Default(.VideoPlayer.Overlay.scrubFilmstrip)
+        private var scrubFilmstrip
+        @Default(.VideoPlayer.Overlay.scrubFilmstripFrames)
+        private var scrubFilmstripFrames
 
         @Environment(ViewState.self)
         private var viewState
@@ -72,7 +78,7 @@ extension VideoPlayer.PlaybackControls {
         private var previewXOffset: CGFloat {
             guard sliderSize.width.isFinite, sliderSize.width > 0 else { return 0 }
 
-            let videoWidth = 85 * videoSizeAspectRatio
+            let videoWidth = scrubPreviewSize.height * videoSizeAspectRatio
             let p = (sliderSize.width * scrubbedProgress) - (videoWidth / 2)
 
             return clamp(p, min: 0, max: max(0, sliderSize.width - videoWidth))
@@ -206,10 +212,22 @@ extension VideoPlayer.PlaybackControls {
                 if isScrubbing, let previewImageProvider = mediaSession.playbackItem?.previewImageProvider {
                     PreviewImageView(previewImageProvider: previewImageProvider)
                         .aspectRatio(videoSizeAspectRatio, contentMode: .fit)
-                        .frame(height: 85)
+                        .frame(height: scrubPreviewSize.height)
                         .posterBorder()
                         .cornerRadius(ratio: 1 / 30, of: \.width)
-                        .offset(x: previewXOffset, y: -100)
+                        .offset(x: previewXOffset, y: -(scrubPreviewSize.height + 15))
+
+                    if scrubFilmstrip {
+                        ScrubFilmstrip(
+                            previewImageProvider: previewImageProvider,
+                            frameCount: scrubFilmstripFrames,
+                            runtime: mediaSession.item.runtime ?? .zero,
+                            aspectRatio: videoSizeAspectRatio
+                        )
+                        .padding(.horizontal, EdgeInsets.edgePadding)
+                        .offset(y: -(scrubPreviewSize.height + 15 + ScrubFilmstrip.height + 12))
+                        .transition(.opacity)
+                    }
                 }
             }
             .overlay(alignment: .bottom) {

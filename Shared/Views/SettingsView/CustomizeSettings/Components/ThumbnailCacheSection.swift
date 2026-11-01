@@ -82,7 +82,7 @@ extension CustomizeSettingsView {
         /// Reads the cache size off the main thread, since it walks the cache directory.
         private func refreshUsage() async {
             usedBytes = await Task.detached(priority: .utility) {
-                DataCache.Swiftfin.posters?.totalAllocatedSize ?? 0
+                (DataCache.Swiftfin.posters?.totalAllocatedSize ?? 0) + (DataCache.Swiftfin.pinned?.totalAllocatedSize ?? 0)
             }.value
         }
 
@@ -90,6 +90,7 @@ extension CustomizeSettingsView {
             usedBytes = nil
             ImageCache.shared.removeAll()
             FolderPreviewStore.shared.removeAll()
+            PinnedFolders.shared.removeAll()
 
             Task {
                 await Task.detached(priority: .userInitiated) {

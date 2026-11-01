@@ -241,6 +241,52 @@ extension Defaults.Keys {
             }
         }
 
+        /// Swiftfin+ folder browser, the Home tab
+        enum FolderBrowser {
+
+            static var viewMode: Key<FolderBrowserViewMode> {
+                UserKey("folderBrowserViewMode", default: .grid)
+            }
+
+            static var posterType: Key<PosterDisplayType> {
+                UserKey("folderBrowserPosterType", default: .landscape)
+            }
+
+            static var sort: Key<FolderBrowserSort> {
+                UserKey("folderBrowserSort", default: .name)
+            }
+
+            static var showFolders: Key<Bool> {
+                UserKey("folderBrowserShowFolders", default: true)
+            }
+
+            static var treeShowsFiles: Key<Bool> {
+                UserKey("folderBrowserTreeShowsFiles", default: false)
+            }
+
+            static var indexEnabled: Key<Bool> {
+                UserKey("folderIndexEnabled", default: true)
+            }
+
+            static var indexAutoUpdate: Key<Bool> {
+                UserKey("folderIndexAutoUpdate", default: true)
+            }
+
+            static var loadMode: Key<FolderLoadMode> {
+                UserKey("folderBrowserLoadMode", default: .all)
+            }
+
+            /// How deep each folder is indexed, keyed by folder ID. Folders not listed index every level.
+            static var indexDepths: Key<[String: String]> {
+                UserKey("folderIndexDepths", default: [:])
+            }
+
+            /// Folders whose thumbnails are kept and never cleared to make room.
+            static var pinnedFolderIDs: Key<[String]> {
+                UserKey("folderBrowserPinnedFolderIDs", default: [])
+            }
+        }
+
         enum Home {
 
             static var showRecentlyAdded: Key<Bool> {
@@ -375,6 +421,19 @@ extension Defaults.Keys {
 
             static var chapterSlider: Key<Bool> {
                 UserKey("chapterSlider", default: true)
+            }
+
+            static var scrubPreviewSize: Key<ScrubPreviewSize> {
+                UserKey("scrubPreviewSize", default: .medium)
+            }
+
+            static var scrubFilmstrip: Key<Bool> {
+                UserKey("scrubFilmstrip", default: true)
+            }
+
+            /// Odd, from 3 to 9, so the frame under the finger sits in the middle.
+            static var scrubFilmstripFrames: Key<Int> {
+                UserKey("scrubFilmstripFrames", default: 5)
             }
 
             // Timestamp

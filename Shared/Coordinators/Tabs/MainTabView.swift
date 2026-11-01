@@ -31,10 +31,12 @@ struct MainTabView: View {
 
     private static var defaultTabCoordinator: TabCoordinator {
         #if os(iOS)
+        // Swiftfin+: Home is the folder browser, and Settings has its own tab
         TabCoordinator {
-            TabItem.contentGroup(provider: DefaultContentGroupProvider())
+            TabItem.folderBrowser
             TabItem.search
             TabItem.media
+            TabItem.settingsTab
         }
         #else
         TabCoordinator {

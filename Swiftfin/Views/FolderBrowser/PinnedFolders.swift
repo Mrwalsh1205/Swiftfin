@@ -51,6 +51,16 @@ final class PinnedFolders: ObservableObject {
         manifest.values.reduce(0) { $0 + $1.count }
     }
 
+    /// Disk used by kept thumbnails, measured off the main thread
+    func keptBytes() async -> Int {
+        await Task.detached(priority: .utility) {
+            guard let pinned = DataCache.Swiftfin.pinned else { return 0 }
+
+            pinned.flush()
+            return pinned.totalAllocatedSize
+        }.value
+    }
+
     func setPinned(_ isPinned: Bool, folder: BaseItemDto) {
         guard let folderID = folder.id else { return }
 
@@ -79,7 +89,7 @@ final class PinnedFolders: ObservableObject {
         }
     }
 
-    /// Forgets every pinned thumbnail. Used when the whole thumbnail cache is cleared.
+    /// Forgets every kept thumbnail. Used when the whole thumbnail cache is cleared.
     func removeAll() {
         manifest = [:]
         save()
@@ -123,13 +133,23 @@ final class PinnedFolders: ObservableObject {
             )
 
             guard let url = sources.first?.url,
-                  let key = ImagePipeline.cacheKey(for: url)
+                  let fullKey = ImagePipeline.cacheKey(for: url)
             else { continue }
 
-            if !pinnedCache.containsData(for: key) {
-                guard let response = try? await ImagePipeline.shared.data(for: ImageRequest(url: url)) else { continue }
+            // Kept under the image's address alone, so any layout or size finds it
+            let key = DataCache.Swiftfin.pinnedKey(for: fullKey)
 
-                pinnedCache.storeData(response.0, for: key)
+            if !pinnedCache.containsData(for: key) {
+                if let data = DataCache.Swiftfin.posters?.cachedData(for: fullKey) {
+                    pinnedCache.storeData(data, for: key)
+                } else {
+                    // Download without also filling the size-limited cache
+                    let request = ImageRequest(url: url, options: [.disableDiskCacheWrites])
+
+                    guard let response = try? await ImagePipeline.shared.data(for: request) else { continue }
+
+                    pinnedCache.storeData(response.0, for: key)
+                }
             }
 
             keys.append(key)
@@ -137,7 +157,16 @@ final class PinnedFolders: ObservableObject {
 
         guard Self.isPinned(folderID) else { return }
 
+        // Videos that left the folder lose their kept copy, unless another pinned folder has them
+        let stale = Set(manifest[folderID] ?? []).subtracting(keys)
         manifest[folderID] = keys
+
+        let stillKept = Set(manifest.values.joined())
+
+        for key in stale where !stillKept.contains(key) {
+            pinnedCache.removeData(for: key)
+        }
+
         save()
     }
 
@@ -145,7 +174,7 @@ final class PinnedFolders: ObservableObject {
         guard let keys = manifest.removeValue(forKey: folderID) else { return }
 
         // Another pinned folder may hold the same video.
-        let stillKept = Set(manifest.values.flatMap { $0 })
+        let stillKept = Set(manifest.values.joined())
 
         for key in keys where !stillKept.contains(key) {
             DataCache.Swiftfin.pinned?.removeData(for: key)

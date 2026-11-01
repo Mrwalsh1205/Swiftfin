@@ -34,11 +34,11 @@ struct FolderPageView: View {
     @EnvironmentObject
     private var state: FolderBrowserState
 
-    @StateObject
+    @ObservedObject
     private var viewModel: FolderContentViewModel
 
-    init(folder: BaseItemDto?) {
-        _viewModel = StateObject(wrappedValue: FolderContentViewModel(folder: folder))
+    init(viewModel: FolderContentViewModel) {
+        self.viewModel = viewModel
     }
 
     private var folder: BaseItemDto? {
@@ -106,14 +106,14 @@ struct FolderPageView: View {
             .padding(.bottom, 24)
         }
         .refreshable {
-            viewModel.reload()
-            await FolderIndex.shared.update()
+            await viewModel.reloadAndWait()
         }
         .onAppear {
             if viewModel.entries.isEmpty, !viewModel.isLoading {
                 viewModel.reload()
             }
         }
+        .onChange(of: state.pageReloadToken) { viewModel.reload() }
         .onChange(of: sort) { viewModel.reload() }
         .onChange(of: showFolders) { viewModel.reload() }
         .onChange(of: loadMode) { viewModel.reload() }
@@ -237,15 +237,9 @@ struct FolderPageView: View {
     }
 
     private func playAll() {
-        let next = viewModel.entries
-            .map(\.snapshot)
-            .first { $0.isFolder != true && $0.canBePlayed && $0.userData?.isPlayed != true }
+        guard let folder else { return }
 
-        if let next {
-            state.play(next)
-        } else {
-            state.toast(L10n.everythingHereIsPlayed, systemName: "checkmark.circle")
-        }
+        state.playAll(in: folder, loaded: viewModel.entries.map(\.snapshot))
     }
 
     // MARK: Content

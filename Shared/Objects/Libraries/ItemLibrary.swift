@@ -72,9 +72,14 @@ struct ItemLibrary: MediaLibrary, SearchablePagingLibrary, WithRandomElementLibr
     /// Home rows, search and other lists keep the standard page size.
     var folderPageSize: Int? {
         #if os(iOS)
+        let pageSize = Defaults[.Customization.FolderBrowser.loadMode].pageSize ?? FolderLoadMode.allAtOncePageSize
+
         switch parent.type {
-        case .collectionFolder, .folder, .photoAlbum, .userView:
-            return Defaults[.Customization.FolderBrowser.loadMode].pageSize ?? FolderLoadMode.allAtOncePageSize
+        case .folder, .photoAlbum:
+            return pageSize
+        case .collectionFolder, .userView:
+            // Movies and TV libraries keep the standard page size
+            return parent.collectionType.isFolderLibrary ? pageSize : nil
         default:
             return nil
         }

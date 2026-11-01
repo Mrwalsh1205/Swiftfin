@@ -25,6 +25,8 @@ extension CustomizeSettingsView {
         private var isPresentingClearConfirmation = false
         @State
         private var usedBytes: Int?
+        @State
+        private var keptBytes: Int?
 
         var body: some View {
             Section(L10n.thumbnailCache) {
@@ -34,6 +36,11 @@ extension CustomizeSettingsView {
 
                 Text(usageDescription)
                     .foregroundStyle(.secondary)
+
+                if let keptBytes, keptBytes > 0 {
+                    Text(L10n.thumbnailCacheKept(ByteCountFormatter.string(fromByteCount: Int64(keptBytes), countStyle: .file)))
+                        .foregroundStyle(.secondary)
+                }
 
                 if let usedBytes, sizeLimit != .noLimit {
                     ProgressView(
@@ -89,14 +96,17 @@ extension CustomizeSettingsView {
         /// Reads the cache size off the main thread, since it walks the cache directory.
         private func refreshUsage() async {
             usedBytes = await Task.detached(priority: .utility) {
-                (DataCache.Swiftfin.posters?.totalAllocatedSize ?? 0) + (DataCache.Swiftfin.pinned?.totalAllocatedSize ?? 0)
+                DataCache.Swiftfin.posters?.totalAllocatedSize ?? 0
             }.value
+            keptBytes = await PinnedFolders.shared.keptBytes()
         }
 
         private func clearCache() {
             usedBytes = nil
             ImageCache.shared.removeAll()
             FolderPreviewStore.shared.removeAll()
+            // Pinned folders are cleared too, as the confirmation says
+            Defaults[.Customization.FolderBrowser.pinnedFolderIDs] = []
             PinnedFolders.shared.removeAll()
 
             Task {

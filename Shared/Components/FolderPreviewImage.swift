@@ -27,6 +27,8 @@ private let folderPreviewMaxStartDelay: Double = 3
 private let folderPreviewEmptyRecheckInterval: TimeInterval = 24 * 60 * 60
 /// How many folder queries may run at the same time.
 private let folderPreviewMaxConcurrentQueries = 3
+/// Small previews (tree rows, pinned rail, list rows) skip the position badge and dots
+private let folderPreviewIndicatorMinimumWidth: CGFloat = 120
 
 /// Posted after a video's primary image changes, with `itemID`, `imageTag` and an optional `blurHash` in `userInfo`.
 private let primaryImageDidChangeNotification = Notification.Name("org.jellyfin.swiftfin.primaryImageDidChange")
@@ -343,7 +345,11 @@ struct FolderPreviewImage<Fallback: View>: View {
         }
         .overlay {
             if image != nil, imageFolderID == folderID, videoCount > 1, let position {
-                FolderPreviewIndicators(position: position, count: videoCount)
+                GeometryReader { proxy in
+                    if proxy.size.width >= folderPreviewIndicatorMinimumWidth {
+                        FolderPreviewIndicators(position: position, count: videoCount)
+                    }
+                }
             }
         }
         .task(

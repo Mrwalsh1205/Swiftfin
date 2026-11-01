@@ -22,6 +22,9 @@ private let treeSearchLimit = 40
 @MainActor
 final class FolderTreeFiles: ObservableObject {
 
+    /// Shared, so loaded lists survive the pane closing
+    static let shared = FolderTreeFiles()
+
     @Published
     private(set) var files: [String: [ItemEntry]] = [:]
     @Published
@@ -110,8 +113,8 @@ struct FolderTreePanel: View {
     @ObservedObject
     private var index = FolderIndex.shared
 
-    @StateObject
-    private var files = FolderTreeFiles()
+    @ObservedObject
+    private var files = FolderTreeFiles.shared
 
     var body: some View {
         VStack(spacing: 0) {
@@ -133,16 +136,20 @@ struct FolderTreePanel: View {
                     .padding(.bottom, 8)
                 }
                 .onAppear {
-                    if let highlightedID = state.highlightedID {
-                        proxy.scrollTo(highlightedID, anchor: .center)
-                    }
+                    loadExpandedFiles()
+                    scrollToHighlight(proxy, animated: false)
                 }
-                .onChange(of: state.highlightedID) { _, newValue in
-                    if let newValue {
-                        withAnimation {
-                            proxy.scrollTo(newValue, anchor: .center)
-                        }
-                    }
+                .onChange(of: state.highlightedID) {
+                    scrollToHighlight(proxy, animated: true)
+                }
+                .onChange(of: files.files.count) {
+                    scrollToHighlight(proxy, animated: true)
+                }
+                .onChange(of: state.expandedIDs) {
+                    loadExpandedFiles()
+                }
+                .onChange(of: treeShowsFiles) {
+                    loadExpandedFiles()
                 }
             }
 
@@ -222,8 +229,32 @@ struct FolderTreePanel: View {
 
     // MARK: Rows
 
+    /// Files for every open folder, when the pane shows files
+    private func loadExpandedFiles() {
+        guard treeShowsFiles else { return }
+
+        for id in state.expandedIDs {
+            files.load(id)
+        }
+    }
+
+    /// Scrolls to the highlighted item. File rows carry a "file-" prefix, so match by item ID.
+    private func scrollToHighlight(_ proxy: ScrollViewProxy, animated: Bool) {
+        guard let highlightedID = state.highlightedID,
+              let target = rows.first(where: { $0.entry.itemID == highlightedID })?.id
+        else { return }
+
+        if animated {
+            withAnimation {
+                proxy.scrollTo(target, anchor: .center)
+            }
+        } else {
+            proxy.scrollTo(target, anchor: .center)
+        }
+    }
+
     private var rows: [Row] {
-        guard let snapshot = index.snapshot else { return [] }
+        guard indexEnabled, let snapshot = index.snapshot else { return [] }
 
         let query = state.treeSearch.trimmingCharacters(in: .whitespaces)
 
@@ -389,9 +420,7 @@ struct FolderTreePanel: View {
         .contentShape(Rectangle())
         .onTapGesture {
             if isFolder {
-                state.open(item)
-                state.isTreeOpen = false
-                state.highlightedID = nil
+                state.openFromTree(item)
             } else {
                 state.play(item)
             }
@@ -544,7 +573,7 @@ struct FolderBrowserRail: View {
 
                 divider
 
-                ForEach(index.snapshot?.libraries ?? [], id: \.id) { library in
+                ForEach(index.libraries, id: \.id) { library in
                     let isCurrent = state.path.first?.id == library.id
 
                     Button {

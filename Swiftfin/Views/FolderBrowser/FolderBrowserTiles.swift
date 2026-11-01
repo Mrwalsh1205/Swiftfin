@@ -333,7 +333,7 @@ struct FolderPeekTray: View {
 
     init(folder: BaseItemDto) {
         self.folder = folder
-        _viewModel = StateObject(wrappedValue: FolderContentViewModel(folder: folder))
+        _viewModel = StateObject(wrappedValue: FolderContentViewModel(folder: folder, rootLibrary: nil))
     }
 
     var body: some View {

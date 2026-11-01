@@ -2118,6 +2118,10 @@ internal enum L10n {
   internal static let thumbnailCache = L10n.tr("Localizable", "thumbnailCache", fallback: "Thumbnail cache")
   /// Thumbnails: calculating
   internal static let thumbnailCacheCalculating = L10n.tr("Localizable", "thumbnailCacheCalculating", fallback: "Thumbnails: calculating")
+  /// %@ kept for pinned folders, never trimmed
+  internal static func thumbnailCacheKept(_ p1: Any) -> String {
+    return L10n.tr("Localizable", "thumbnailCacheKept", String(describing: p1), fallback: "%@ kept for pinned folders, never trimmed")
+  }
   /// Thumbnails: %@ of %@
   internal static func thumbnailCacheUsage(_ p1: Any, _ p2: Any) -> String {
     return L10n.tr("Localizable", "thumbnailCacheUsage", String(describing: p1), String(describing: p2), fallback: "Thumbnails: %@ of %@")

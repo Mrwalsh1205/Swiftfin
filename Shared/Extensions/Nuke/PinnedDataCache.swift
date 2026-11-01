@@ -13,8 +13,7 @@ extension DataCache.Swiftfin {
 
     private static let pinnedDirectoryName = "org.jellyfin.swiftfin/PinnedPosters"
 
-    /// Thumbnails of pinned folders. It has no size limit and the poster
-    /// cache's sweep never touches it, so these are never cleared to make room.
+    /// Thumbnails of pinned folders. Sweeping is off, so these are never cleared to make room.
     static let pinned: DataCache? = {
         guard let root = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
             return nil
@@ -28,7 +27,7 @@ extension DataCache.Swiftfin {
             return ImagePipeline.cacheKey(for: url)
         }
 
-        dataCache?.sizeLimit = .max
+        dataCache?.isSweepEnabled = false
 
         var excludedPath = path
         var values = URLResourceValues()
@@ -38,10 +37,16 @@ extension DataCache.Swiftfin {
         return dataCache
     }()
 
-    /// Reads pinned thumbnails first, then the regular poster cache.
+    /// Pinned copies are stored under the image's address alone, without the requested
+    /// width, so a thumbnail kept at one size is found at every other size too.
+    nonisolated static func pinnedKey(for key: String) -> String {
+        key.split(separator: "-", maxSplits: 1).first.map(String.init) ?? key
+    }
+
+    /// Reads the regular poster cache first, then the pinned thumbnails.
     /// New downloads go to the poster cache; pinning copies them over.
     static let postersWithPinned: DataCaching? = {
-        guard let posters = DataCache.Swiftfin.posters else { return DataCache.Swiftfin.pinned }
+        guard let posters = DataCache.Swiftfin.posters else { return nil }
 
         return PinnedAwareDataCache(main: posters, pinned: DataCache.Swiftfin.pinned)
     }()
@@ -58,11 +63,11 @@ final class PinnedAwareDataCache: DataCaching, @unchecked Sendable {
     }
 
     func cachedData(for key: String) -> Data? {
-        pinned?.cachedData(for: key) ?? main.cachedData(for: key)
+        main.cachedData(for: key) ?? pinned?.cachedData(for: DataCache.Swiftfin.pinnedKey(for: key))
     }
 
     func containsData(for key: String) -> Bool {
-        (pinned?.containsData(for: key) ?? false) || main.containsData(for: key)
+        main.containsData(for: key) || (pinned?.containsData(for: DataCache.Swiftfin.pinnedKey(for: key)) ?? false)
     }
 
     func storeData(_ data: Data, for key: String) {
@@ -71,12 +76,12 @@ final class PinnedAwareDataCache: DataCaching, @unchecked Sendable {
 
     /// Removes both copies, so a changed thumbnail never shows its old pinned frame.
     func removeData(for key: String) {
-        pinned?.removeData(for: key)
         main.removeData(for: key)
+        pinned?.removeData(for: DataCache.Swiftfin.pinnedKey(for: key))
     }
 
+    /// Clears the regular cache only; kept thumbnails go through `PinnedFolders`.
     func removeAll() {
-        pinned?.removeAll()
         main.removeAll()
     }
 }

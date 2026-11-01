@@ -224,6 +224,7 @@ struct FolderActionSheet: View {
 
                 ActionRow(title: L10n.refreshFolderNow, systemImage: "arrow.clockwise") {
                     state.sheet = nil
+                    state.reloadPage()
 
                     Task {
                         await FolderIndex.shared.update()

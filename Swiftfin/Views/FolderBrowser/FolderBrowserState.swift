@@ -54,6 +54,13 @@ final class FolderBrowserState: ObservableObject {
     var peekedIDs: Set<String> = []
     @Published
     var treeSearch = ""
+    /// Bumped to make the shown folder load again
+    @Published
+    private(set) var pageReloadToken = 0
+
+    /// One loader per folder, kept so going back shows the folder at once
+    private var viewModels: [String: FolderContentViewModel] = [:]
+    private var viewModelOrder: [String] = []
 
     var playAction: PlayMediaAction?
     var router: Router.Wrapper?
@@ -68,6 +75,29 @@ final class FolderBrowserState: ObservableObject {
 
     var currentFolder: BaseItemDto? {
         path.last
+    }
+
+    func viewModel(for folder: BaseItemDto?) -> FolderContentViewModel {
+        let key = folder?.id ?? "home"
+
+        if let existing = viewModels[key] {
+            return existing
+        }
+
+        let viewModel = FolderContentViewModel(folder: folder, rootLibrary: path.first)
+        viewModels[key] = viewModel
+        viewModelOrder.append(key)
+
+        if viewModelOrder.count > 8 {
+            let oldest = viewModelOrder.removeFirst()
+            viewModels[oldest] = nil
+        }
+
+        return viewModel
+    }
+
+    func reloadPage() {
+        pageReloadToken += 1
     }
 
     // MARK: Navigation
@@ -140,9 +170,64 @@ final class FolderBrowserState: ObservableObject {
             return
         }
 
+        let hadSheet = sheet != nil
         sheet = nil
         isTreeOpen = false
-        playAction?.callAsFunction(intent: intent)
+
+        // The player can't present while a sheet is still closing
+        guard hadSheet else {
+            playAction?.callAsFunction(intent: intent)
+            return
+        }
+
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(450))
+            playAction?.callAsFunction(intent: intent)
+        }
+    }
+
+    /// Plays the first unplayed video in a folder, looking below its subfolders when the page has none.
+    func playAll(in folder: BaseItemDto, loaded: [BaseItemDto]) {
+        if let next = loaded.first(where: { $0.isFolder != true && $0.canBePlayed && $0.userData?.isPlayed != true }) {
+            play(next)
+            return
+        }
+
+        guard let folderID = folder.id, let userSession = Container.shared.currentUserSession() else {
+            toast(L10n.everythingHereIsPlayed)
+            return
+        }
+
+        Task {
+            var parameters = Paths.GetItemsParameters()
+            parameters.enableUserData = true
+            parameters.filters = [.isNotFolder, .isUnplayed]
+            parameters.isRecursive = true
+            parameters.limit = 1
+            parameters.mediaTypes = [.video]
+            parameters.parentID = folderID
+            parameters.sortBy = [.sortName]
+            parameters.userID = userSession.user.id
+
+            let next = try? await userSession.client.send(Paths.getItems(parameters: parameters)).value.items?.first
+
+            if let next {
+                play(next)
+            } else {
+                toast(L10n.everythingHereIsPlayed)
+            }
+        }
+    }
+
+    /// A folder tapped in the tree. The folder browser keeps the pane open and moves behind it;
+    /// Classic rows pushes a page, so the pane closes.
+    func openFromTree(_ folder: BaseItemDto) {
+        highlightedID = nil
+        open(folder)
+
+        if opensFoldersAsPages {
+            isTreeOpen = false
+        }
     }
 
     func togglePeek(_ folder: BaseItemDto) {
@@ -181,6 +266,7 @@ final class FolderBrowserState: ObservableObject {
     func route(to route: NavigationRoute) {
         let hadSheet = sheet != nil
         sheet = nil
+        isTreeOpen = false
 
         guard hadSheet else {
             router?.route(to: route)

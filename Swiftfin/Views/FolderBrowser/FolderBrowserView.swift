@@ -52,7 +52,7 @@ struct FolderBrowserView: View {
     var body: some View {
         GeometryReader { proxy in
             ZStack(alignment: side.alignment) {
-                FolderPageView(folder: state.currentFolder)
+                FolderPageView(viewModel: state.viewModel(for: state.currentFolder))
                     .id(state.currentFolder?.id ?? "home")
                     .padding(side.edge, FolderBrowserRail.width)
                     .transition(.opacity)
@@ -125,17 +125,6 @@ struct FolderTreeOverlay: View {
     let panelWidth: CGFloat
     let railInset: CGFloat
 
-    private var offset: CGFloat {
-        let hiddenDistance = panelWidth + railInset + 20
-
-        switch side {
-        case .left:
-            return state.isTreeOpen ? railInset : -hiddenDistance
-        case .right:
-            return state.isTreeOpen ? -railInset : hiddenDistance
-        }
-    }
-
     private var panelShape: UnevenRoundedRectangle {
         switch side {
         case .left:
@@ -153,37 +142,39 @@ struct FolderTreeOverlay: View {
     }
 
     var body: some View {
+        // The panel exists only while open, so a hidden tree never loads thumbnails or rotates previews
         ZStack(alignment: side.alignment) {
             if state.isTreeOpen {
                 Color.black
-                    .opacity(0.4)
+                    .opacity(railInset == 0 ? 0.6 : 0.4)
                     .padding(side.edge, railInset)
                     .contentShape(Rectangle())
                     .onTapGesture(perform: close)
                     .accessibilityLabel(L10n.close)
                     .accessibilityAddTraits(.isButton)
                     .transition(.opacity)
-            }
 
-            FolderTreePanel()
-                .frame(width: max(0, panelWidth))
-                .clipShape(panelShape)
-                .shadow(color: .black.opacity(0.3), radius: 12, x: side == .left ? 2 : -2)
-                .offset(x: offset)
-                .simultaneousGesture(
-                    DragGesture(minimumDistance: 20)
-                        .onEnded { value in
-                            // Swipe the panel back toward its edge to close it
-                            let distance = side == .left ? -value.translation.width : value.translation.width
+                FolderTreePanel()
+                    .frame(width: max(0, panelWidth))
+                    .clipShape(panelShape)
+                    .shadow(color: .black.opacity(0.3), radius: 12, x: side == .left ? 2 : -2)
+                    .padding(side.edge, railInset)
+                    .simultaneousGesture(
+                        DragGesture(minimumDistance: 20)
+                            .onEnded { value in
+                                // Swipe the panel back toward its edge to close it
+                                let distance = side == .left ? -value.translation.width : value.translation.width
 
-                            if distance > swipeToCloseDistance {
-                                close()
+                                if distance > swipeToCloseDistance {
+                                    close()
+                                }
                             }
-                        }
-                )
-                .allowsHitTesting(state.isTreeOpen)
+                    )
+                    .transition(.move(edge: side.slideEdge))
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: side.alignment)
+        .allowsHitTesting(state.isTreeOpen)
         .animation(treeAnimation, value: state.isTreeOpen)
     }
 }
@@ -207,6 +198,15 @@ extension FolderTreeSide {
             .trailing
         }
     }
+
+    var slideEdge: Edge {
+        switch self {
+        case .left:
+            .leading
+        case .right:
+            .trailing
+        }
+    }
 }
 
 // MARK: Host
@@ -215,8 +215,6 @@ extension FolderTreeSide {
 /// playback and routing, and keeping the folder index current.
 private struct FolderBrowserHost: ViewModifier {
 
-    @Default(.Customization.FolderBrowser.indexDepths)
-    private var indexDepths
     @Default(.Customization.FolderBrowser.indexEnabled)
     private var indexEnabled
 
@@ -227,6 +225,8 @@ private struct FolderBrowserHost: ViewModifier {
     private var playMedia
     @Router
     private var router
+    @TabItemSelected
+    private var tabItemSelected
 
     @ObservedObject
     var state: FolderBrowserState
@@ -255,15 +255,26 @@ private struct FolderBrowserHost: ViewModifier {
                 state.router = router
                 state.toastProxy = toastProxy
             }
+            .onDisappear {
+                state.isTreeOpen = false
+            }
+            .onReceive(tabItemSelected) { event in
+                // Tapping the Home tab again returns to the top level
+                guard event.isRepeat, event.isRoot else { return }
+
+                withAnimation(treeAnimation) {
+                    state.isTreeOpen = false
+                    state.goHome()
+                }
+            }
             .task {
                 await FolderIndex.shared.prepare()
-            }
-            .onChange(of: indexDepths) {
-                Task { await FolderIndex.shared.update() }
             }
             .onChange(of: indexEnabled) { _, isEnabled in
                 if isEnabled {
                     Task { await FolderIndex.shared.update() }
+                } else {
+                    FolderIndex.shared.clear()
                 }
             }
     }

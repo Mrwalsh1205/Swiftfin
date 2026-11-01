@@ -26,54 +26,78 @@ final class FolderContentViewModel: ObservableObject {
     @Published
     private(set) var error: Error?
 
+    /// "Load a folder" applies to folder libraries and plain folders.
+    /// Movies and TV pages keep the standard page size.
+    private let usesLoadMode: Bool
     private var loadTask: Task<Void, Never>?
     private var nextIndex = 0
+    /// Bumped by each reload, so a cancelled load can't touch the next one's state
+    private var generation = 0
 
-    init(folder: BaseItemDto?) {
+    init(folder: BaseItemDto?, rootLibrary: BaseItemDto?) {
         self.folder = folder
+
+        let collectionType: CollectionType? = (rootLibrary ?? folder)?.collectionType
+        self.usesLoadMode = folder != nil && collectionType.isFolderLibrary
     }
 
     /// Starts over from the first page.
     func reload() {
         loadTask?.cancel()
+        generation += 1
         entries = []
         nextIndex = 0
         hasMore = false
-        loadTask = Task { await loadPage() }
+        error = nil
+
+        let current = generation
+        loadTask = Task { await loadPage(generation: current) }
+    }
+
+    /// Starts over and returns once the first page is in, for pull-to-refresh.
+    func reloadAndWait() async {
+        reload()
+        await loadTask?.value
     }
 
     func loadMore() {
         guard hasMore, !isLoading else { return }
 
-        loadTask = Task { await loadPage() }
+        let current = generation
+        loadTask = Task { await loadPage(generation: current) }
     }
 
-    private func loadPage() async {
+    private func loadPage(generation: Int) async {
         guard let userSession = Container.shared.currentUserSession() else { return }
 
         isLoading = true
-        error = nil
-        defer { isLoading = false }
+        defer {
+            if generation == self.generation {
+                isLoading = false
+            }
+        }
 
         do {
             let page: [ItemEntry]
             let pageSize: Int?
 
             if let folderID = folder?.id {
-                pageSize = Defaults[.Customization.FolderBrowser.loadMode].pageSize
+                pageSize = usesLoadMode
+                    ? Defaults[.Customization.FolderBrowser.loadMode].pageSize
+                    : defaultPagingLibraryPageSize
                 page = try await requestChildren(of: folderID, pageSize: pageSize, userSession: userSession)
             } else {
                 pageSize = nil
                 page = try await requestLibraries(userSession: userSession)
             }
 
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, generation == self.generation else { return }
 
             entries.append(contentsOf: page)
             nextIndex += page.count
             hasMore = pageSize.map { page.count == $0 } ?? false
         } catch {
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, generation == self.generation else { return }
 
             self.error = error
         }
@@ -102,7 +126,7 @@ final class FolderContentViewModel: ObservableObject {
         var parameters = Paths.GetItemsParameters()
         parameters.enableImageTypes = [.primary, .thumb, .backdrop]
         parameters.enableUserData = true
-        parameters.fields = [.childCount, .recursiveItemCount, .dateCreated, .primaryImageAspectRatio, .mediaSources, .path, .parentID]
+        parameters.fields = [.childCount, .recursiveItemCount, .dateCreated, .primaryImageAspectRatio, .path, .parentID]
         parameters.imageTypeLimit = 1
         parameters.parentID = folderID
         parameters.startIndex = nextIndex

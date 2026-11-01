@@ -17,7 +17,8 @@ private let folderIndexSearchLimit = 40
 /// A copy of every library's folder tree, saved on this phone.
 ///
 /// The folder pane draws from it, so it opens instantly without asking the server
-/// for each level. Each folder keeps its own depth (see `FolderIndexDepth`).
+/// for each level. Each folder keeps its own depth (see `FolderIndexDepth`), which
+/// is applied when the tree is read, so changing it never needs a new download.
 @MainActor
 final class FolderIndex: ObservableObject {
 
@@ -31,10 +32,15 @@ final class FolderIndex: ObservableObject {
         var date: Date
     }
 
+    private struct UpdateFailed: Error {}
+
     static let shared = FolderIndex()
 
     @Published
     private(set) var snapshot: Snapshot?
+    /// The user's libraries, for the toolbar. Kept even while the index is off.
+    @Published
+    private(set) var libraries: [BaseItemDto] = []
     @Published
     private(set) var isUpdating = false
     @Published
@@ -43,6 +49,9 @@ final class FolderIndex: ObservableObject {
     /// Parent ID of each indexed folder, rebuilt from `children`
     private var parents: [String: String] = [:]
     private var loadedKey: String?
+    /// Users whose automatic update already ran during this launch
+    private var autoUpdatedKeys: Set<String> = []
+    private var runningUpdate: Task<Void, Never>?
     private let writeQueue = DispatchQueue(label: "org.jellyfin.swiftfin.folderIndex", qos: .utility)
 
     private init() {}
@@ -55,13 +64,7 @@ final class FolderIndex: ObservableObject {
 
     /// Items counted across the libraries, using the server's recursive counts
     var itemCount: Int {
-        guard let snapshot else { return 0 }
-
-        // Libraries from the server carry no counts, so add up their top folders.
-        return snapshot.libraries.reduce(0) { total, library in
-            let topFolders = library.id.flatMap { snapshot.children[$0] } ?? []
-            return total + topFolders.reduce(0) { $0 + (snapshot.folders[$1]?.recursiveItemCount ?? 0) }
-        }
+        snapshot?.libraries.reduce(0) { $0 + ($1.recursiveItemCount ?? 0) } ?? 0
     }
 
     /// The approximate size of the saved index file
@@ -72,17 +75,26 @@ final class FolderIndex: ObservableObject {
     }
 
     func childFolders(of id: String) -> [BaseItemDto] {
-        guard let snapshot else { return [] }
+        guard let snapshot, !hidesChildren(of: id) else { return [] }
 
         return (snapshot.children[id] ?? []).compactMap { snapshot.folders[$0] }
     }
 
     func hasChildFolders(_ id: String) -> Bool {
-        snapshot?.children[id]?.isNotEmpty ?? false
+        guard let snapshot, !hidesChildren(of: id) else { return false }
+
+        return snapshot.children[id]?.isNotEmpty ?? false
+    }
+
+    /// A folder set to One level or Folders only lists its own subfolders, but nothing below them.
+    private func hidesChildren(of id: String) -> Bool {
+        guard let parentID = parents[id] else { return false }
+
+        return Self.depth(for: parentID) != .all
     }
 
     func folder(id: String) -> BaseItemDto? {
-        snapshot?.folders[id] ?? snapshot?.libraries.first { $0.id == id }
+        snapshot?.folders[id] ?? libraries.first { $0.id == id } ?? snapshot?.libraries.first { $0.id == id }
     }
 
     /// The library and folders that lead to `id`, starting with the library and ending with `id` itself.
@@ -127,8 +139,8 @@ final class FolderIndex: ObservableObject {
 
     // MARK: Loading
 
-    /// Loads the saved index for the signed-in user, and updates it when
-    /// it's missing or automatic updates are on.
+    /// Loads the saved index for the signed-in user. With "Update automatically" on, it
+    /// updates once per launch; a missing index is always built.
     func prepare() async {
         guard let key = currentKey() else { return }
 
@@ -136,32 +148,103 @@ final class FolderIndex: ObservableObject {
             loadedKey = key
             snapshot = await readSnapshot(for: key)
             rebuildParents()
+            libraries = snapshot?.libraries ?? []
         }
 
-        guard Defaults[.Customization.FolderBrowser.indexEnabled] else { return }
+        guard Defaults[.Customization.FolderBrowser.indexEnabled] else {
+            if libraries.isEmpty {
+                await loadLibrariesOnly()
+            }
 
-        if snapshot == nil || Defaults[.Customization.FolderBrowser.indexAutoUpdate] {
+            return
+        }
+
+        let isDue = snapshot == nil
+            || (Defaults[.Customization.FolderBrowser.indexAutoUpdate] && !autoUpdatedKeys.contains(key))
+
+        autoUpdatedKeys.insert(key)
+
+        if isDue {
             await update()
         }
     }
 
     /// Asks the server for every library's folders and saves the result.
+    /// Calls made while an update runs wait for it instead of being dropped.
     func update() async {
-        guard !isUpdating, let userSession = Container.shared.currentUserSession(), let key = currentKey() else { return }
+        if let runningUpdate {
+            await runningUpdate.value
+            return
+        }
+
+        guard Defaults[.Customization.FolderBrowser.indexEnabled] else { return }
+
+        let task = Task { await performUpdate() }
+        runningUpdate = task
+        await task.value
+        runningUpdate = nil
+    }
+
+    /// Forgets the saved index. The libraries stay, so the toolbar keeps working.
+    func clear() {
+        if let url = fileURL(for: loadedKey ?? currentKey()) {
+            try? FileManager.default.removeItem(at: url)
+        }
+
+        snapshot = nil
+        parents = [:]
+        didFail = false
+    }
+
+    /// Removes the saved index and builds it again. Thumbnails are kept.
+    func rebuild() async {
+        clear()
+        await update()
+    }
+
+    // MARK: Server
+
+    private func loadLibrariesOnly() async {
+        guard let userSession = Container.shared.currentUserSession() else { return }
+
+        if let loaded = try? await requestLibraries(userSession: userSession) {
+            libraries = loaded
+        }
+    }
+
+    private func performUpdate() async {
+        guard let userSession = Container.shared.currentUserSession(), let key = currentKey() else { return }
 
         isUpdating = true
         didFail = false
         defer { isUpdating = false }
 
         do {
-            let libraries = try await requestLibraries(userSession: userSession)
+            var libraries = try await requestLibraries(userSession: userSession)
+            self.libraries = libraries
+
+            await applyCounts(to: &libraries, userSession: userSession)
+
             var folders: [String: BaseItemDto] = [:]
             var children: [String: [String]] = [:]
+            var attempted = 0
+            var failed = 0
 
             for library in libraries {
-                guard let libraryID = library.id else { continue }
+                guard let libraryID = library.id, library.collectionType.hasFolderTree else { continue }
 
-                let libraryFolders = try await requestFolders(in: libraryID, userSession: userSession)
+                attempted += 1
+
+                let libraryFolders: [BaseItemDto]
+
+                do {
+                    libraryFolders = try await requestFolders(in: libraryID, userSession: userSession)
+                } catch {
+                    // One library failing (Live TV, a plugin) shouldn't lose the others
+                    failed += 1
+                    continue
+                }
+
                 let ids = Set(libraryFolders.compactMap(\.id))
 
                 for folder in libraryFolders {
@@ -176,6 +259,10 @@ final class FolderIndex: ObservableObject {
                 }
             }
 
+            if attempted > 0, failed == attempted {
+                throw UpdateFailed()
+            }
+
             for (parentID, childIDs) in children {
                 children[parentID] = childIDs.sorted { lhs, rhs in
                     let left = folders[lhs]?.sortName ?? folders[lhs]?.displayTitle ?? ""
@@ -184,8 +271,7 @@ final class FolderIndex: ObservableObject {
                 }
             }
 
-            var newSnapshot = Snapshot(libraries: libraries, folders: folders, children: children, date: .now)
-            Self.applyDepths(to: &newSnapshot)
+            let newSnapshot = Snapshot(libraries: libraries, folders: folders, children: children, date: .now)
 
             // The user may have signed in as someone else while this ran.
             guard currentKey() == key else { return }
@@ -194,24 +280,15 @@ final class FolderIndex: ObservableObject {
             loadedKey = key
             rebuildParents()
             save(newSnapshot, for: key)
+
+            // Pinned folders pick up videos added since they were pinned
+            Task {
+                await PinnedFolders.shared.refreshAll()
+            }
         } catch {
             didFail = true
         }
     }
-
-    /// Removes the saved index and builds it again. Thumbnails are kept.
-    func rebuild() async {
-        if let url = fileURL(for: loadedKey) {
-            try? FileManager.default.removeItem(at: url)
-        }
-
-        snapshot = nil
-        parents = [:]
-
-        await update()
-    }
-
-    // MARK: Server
 
     private func requestLibraries(userSession: UserSession) async throws -> [BaseItemDto] {
         let parameters = Paths.GetUserViewsParameters(userID: userSession.user.id)
@@ -219,6 +296,37 @@ final class FolderIndex: ObservableObject {
 
         return (response.value.items ?? []).filter { library in
             CollectionType.supportedCases.contains(library.collectionType ?? .folders)
+        }
+    }
+
+    /// Best effort: the libraries list carries no counts, so ask for them in one request.
+    private func applyCounts(to libraries: inout [BaseItemDto], userSession: UserSession) async {
+        let ids = libraries.compactMap(\.id)
+
+        guard ids.isNotEmpty else { return }
+
+        var parameters = Paths.GetItemsParameters()
+        parameters.enableImages = false
+        parameters.enableUserData = false
+        parameters.fields = [.childCount, .recursiveItemCount]
+        parameters.ids = ids
+        parameters.userID = userSession.user.id
+
+        guard let counted = try? await userSession.client.send(Paths.getItems(parameters: parameters)).value.items else { return }
+
+        var countsByID: [String: BaseItemDto] = [:]
+
+        for item in counted {
+            if let id = item.id {
+                countsByID[id] = item
+            }
+        }
+
+        for index in libraries.indices {
+            guard let id = libraries[index].id, let item = countsByID[id] else { continue }
+
+            libraries[index].recursiveItemCount = item.recursiveItemCount
+            libraries[index].childCount = item.childCount
         }
     }
 
@@ -254,28 +362,6 @@ final class FolderIndex: ObservableObject {
         return result
     }
 
-    /// Drops what lies below folders set to one level or folders only.
-    private static func applyDepths(to snapshot: inout Snapshot) {
-        let depths = Defaults[.Customization.FolderBrowser.indexDepths]
-
-        guard depths.isNotEmpty else { return }
-
-        func removeDescendants(of id: String) {
-            for childID in snapshot.children[id] ?? [] {
-                removeDescendants(of: childID)
-                snapshot.folders[childID] = nil
-            }
-
-            snapshot.children[id] = nil
-        }
-
-        for (folderID, rawValue) in depths where rawValue != FolderIndexDepth.all.rawValue {
-            for childID in snapshot.children[folderID] ?? [] {
-                removeDescendants(of: childID)
-            }
-        }
-    }
-
     // MARK: Storage
 
     private func currentKey() -> String? {
@@ -301,10 +387,13 @@ final class FolderIndex: ObservableObject {
         }.value
     }
 
+    /// Encodes and writes off the main thread; the snapshot can hold thousands of folders.
     private func save(_ snapshot: Snapshot, for key: String) {
-        guard let url = fileURL(for: key), let data = try? JSONEncoder().encode(snapshot) else { return }
+        guard let url = fileURL(for: key) else { return }
 
         writeQueue.async {
+            guard let data = try? JSONEncoder().encode(snapshot) else { return }
+
             try? FileManager.default.createDirectory(
                 at: url.deletingLastPathComponent(),
                 withIntermediateDirectories: true

@@ -8,6 +8,30 @@
 
 import CoreGraphics
 import Foundation
+import JellyfinAPI
+
+extension Optional where Wrapped == CollectionType {
+
+    /// Libraries whose contents are plain folders, where "Load a folder" applies
+    var isFolderLibrary: Bool {
+        switch self {
+        case .none, .some(.folders), .some(.homevideos):
+            true
+        default:
+            false
+        }
+    }
+
+    /// Libraries worth listing in the folder tree. Music, Live TV, playlists and the rest stay out.
+    var hasFolderTree: Bool {
+        switch self {
+        case .none, .some(.folders), .some(.homevideos), .some(.movies), .some(.tvshows), .some(.boxsets):
+            true
+        default:
+            false
+        }
+    }
+}
 
 /// What the Home tab shows.
 enum HomeStyle: String, CaseIterable, Displayable, Storable {

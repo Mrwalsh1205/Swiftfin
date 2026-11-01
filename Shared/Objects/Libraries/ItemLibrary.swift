@@ -98,6 +98,29 @@ struct ItemLibrary: MediaLibrary, SearchablePagingLibrary, WithRandomElementLibr
                 }
                 .pickerStyle(.menu)
             }
+
+            // Only library and folder views apply the setting, see `init`
+            if let missingThumbnails = environment.wrappedValue.missingThumbnails {
+                Picker(
+                    selection: Binding(
+                        get: { missingThumbnails },
+                        set: { placement in
+                            // Kept in sync with Settings > Libraries, which observes this key
+                            Defaults[.Customization.Library.missingThumbnails] = placement
+                            environment.wrappedValue.missingThumbnails = placement
+                        }
+                    )
+                ) {
+                    ForEach(MissingThumbnailPlacement.allCases, id: \.self) { placement in
+                        Text(placement.displayTitle)
+                            .tag(placement)
+                    }
+                } label: {
+                    Text(L10n.missingThumbnails)
+                    Text(missingThumbnails.displayTitle)
+                }
+                .pickerStyle(.menu)
+            }
         }
         .eraseToAnyView()
     }

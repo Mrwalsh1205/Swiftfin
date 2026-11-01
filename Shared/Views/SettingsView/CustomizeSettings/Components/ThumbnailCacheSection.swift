@@ -35,6 +35,13 @@ extension CustomizeSettingsView {
                 Text(usageDescription)
                     .foregroundStyle(.secondary)
 
+                if let usedBytes, sizeLimit != .noLimit {
+                    ProgressView(
+                        value: min(Double(usedBytes), Double(sizeLimit.byteCount)),
+                        total: Double(sizeLimit.byteCount)
+                    )
+                }
+
                 Button(L10n.clearThumbnailCache, role: .destructive) {
                     isPresentingClearConfirmation = true
                 }

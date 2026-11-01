@@ -299,6 +299,11 @@ struct FolderPreviewImage<Fallback: View>: View {
     private var imageFolderID: String?
     @State
     private var imageVideoID: String?
+    /// Index of the shown video in the current rotation order, for the badge and dots.
+    @State
+    private var position: Int?
+    @State
+    private var videoCount = 0
 
     private let folder: BaseItemDto
     private let folderID: String
@@ -336,6 +341,11 @@ struct FolderPreviewImage<Fallback: View>: View {
                 fallback
             }
         }
+        .overlay {
+            if image != nil, imageFolderID == folderID, videoCount > 1, let position {
+                FolderPreviewIndicators(position: position, count: videoCount)
+            }
+        }
         .task(
             id: RotationID(
                 folderID: folderID,
@@ -355,6 +365,8 @@ struct FolderPreviewImage<Fallback: View>: View {
             image = nil
             imageVideoID = nil
             imageFolderID = folderID
+            position = nil
+            videoCount = 0
         }
 
         guard scenePhase == .active,
@@ -411,6 +423,8 @@ struct FolderPreviewImage<Fallback: View>: View {
             else { continue }
 
             if await show(video) {
+                position = index
+                videoCount = videos.count
                 return index
             }
 
@@ -447,5 +461,42 @@ struct FolderPreviewImage<Fallback: View>: View {
         }
 
         return true
+    }
+}
+
+// MARK: - Indicators
+
+/// "3 / 8" in the top-right corner and one dot per video along the bottom,
+/// so a rotating folder reads as a set of previews rather than one still.
+private struct FolderPreviewIndicators: View {
+
+    let position: Int
+    let count: Int
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            Color.clear
+
+            HStack(spacing: 3) {
+                ForEach(0 ..< count, id: \.self) { index in
+                    Circle()
+                        .fill(.white.opacity(index == position ? 1 : 0.35))
+                        .frame(width: 5, height: 5)
+                }
+            }
+            .padding(.bottom, 5)
+        }
+        .overlay(alignment: .topTrailing) {
+            Text("\(position + 1) / \(count)")
+                .font(.caption2.weight(.semibold))
+                .monospacedDigit()
+                .foregroundStyle(.white)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
+                .background(.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 5))
+                .padding(6)
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }

@@ -29,14 +29,23 @@ jobs:
         scheme:
           - "Swiftfin"
 
-    runs-on: xcode-27
-
-    env:
-      XCODE_VERSION: "27.1"
+    # GitHub's standard macOS runner: free for public repositories
+    runs-on: macos-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
+      - name: Select newest Xcode
+        run: |
+          set -euo pipefail
+          ls -d /Applications/Xcode*.app || true
+          newest=$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -n 1)
+          if [ -z "$newest" ]; then newest=/Applications/Xcode.app; fi
+          sudo xcode-select -s "$newest/Contents/Developer"
+          xcodebuild -version
+          version=$(xcodebuild -version | head -n 1 | awk '{print $2}')
+          echo "XCODE_VERSION=$version" >> "$GITHUB_ENV"
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
@@ -67,8 +76,7 @@ jobs:
           retry_on: error
           timeout_minutes: 60
           command: bundle exec fastlane buildLane \
-            scheme:"\"${{ matrix.scheme }}\"" \
-            xcodeVersion:${{ env.XCODE_VERSION }}
+            scheme:"\"${{ matrix.scheme }}\""
 
       - name: Package unsigned IPA
         env:

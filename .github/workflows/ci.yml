@@ -30,7 +30,7 @@ jobs:
           - "Swiftfin"
 
     # GitHub's standard macOS runner: free for public repositories
-    runs-on: macos-latest
+    runs-on: macos-27
 
     steps:
       - name: Checkout

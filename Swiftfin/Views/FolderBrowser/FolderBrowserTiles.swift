@@ -134,8 +134,8 @@ struct FolderBrowserThumbnail: View {
 
 private struct FolderBrowserGestures: ViewModifier {
 
-    @EnvironmentObject
-    private var state: FolderBrowserState
+    @Environment(\.folderBrowserState)
+    private var state
 
     let entry: ItemEntry
 
@@ -148,24 +148,24 @@ private struct FolderBrowserGestures: ViewModifier {
                 .contentShape(Rectangle())
                 .onTapGesture(count: 2) {
                     UIDevice.impact(.light)
-                    state.togglePeek(item)
+                    state?.togglePeek(item)
                 }
                 .onTapGesture {
-                    state.select(item)
+                    state?.select(item)
                 }
                 .onLongPressGesture(minimumDuration: longPressDuration) {
                     UIDevice.impact(.medium)
-                    state.sheet = .folder(entry)
+                    state?.sheet = .folder(entry)
                 }
         } else {
             content
                 .contentShape(Rectangle())
                 .onTapGesture {
-                    state.select(item)
+                    state?.select(item)
                 }
                 .onLongPressGesture(minimumDuration: longPressDuration) {
                     UIDevice.impact(.medium)
-                    state.sheet = .item(entry)
+                    state?.sheet = .item(entry)
                 }
         }
     }
@@ -183,14 +183,14 @@ extension View {
 
 struct FolderBrowserMoreButton: View {
 
-    @EnvironmentObject
-    private var state: FolderBrowserState
+    @Environment(\.folderBrowserState)
+    private var state
 
     let entry: ItemEntry
 
     var body: some View {
         Button {
-            state.sheet = entry.snapshot.isFolder == true ? .folder(entry) : .item(entry)
+            state?.sheet = entry.snapshot.isFolder == true ? .folder(entry) : .item(entry)
         } label: {
             Image(systemName: "ellipsis")
                 .rotationEffect(.degrees(90))
@@ -208,9 +208,6 @@ struct FolderBrowserMoreButton: View {
 
 struct FolderBrowserTile: View {
 
-    @EnvironmentObject
-    private var state: FolderBrowserState
-
     @Default(.Customization.FolderBrowser.pinnedFolderIDs)
     private var pinnedFolderIDs
 
@@ -218,13 +215,10 @@ struct FolderBrowserTile: View {
     let displayType: PosterDisplayType
     let showsMeta: Bool
     let showsMoreButton: Bool
+    let isPeeked: Bool
 
     private var item: BaseItemDto {
         entry.snapshot
-    }
-
-    private var isPeeked: Bool {
-        item.id.map { state.peekedIDs.contains($0) } ?? false
     }
 
     private var secondLine: String {
@@ -323,8 +317,8 @@ struct FolderBrowserRow: View {
 /// What's inside a folder, shown under its row after a double tap.
 struct FolderPeekTray: View {
 
-    @EnvironmentObject
-    private var state: FolderBrowserState
+    @Environment(\.folderBrowserState)
+    private var state
 
     @StateObject
     private var viewModel: FolderContentViewModel
@@ -351,7 +345,7 @@ struct FolderPeekTray: View {
                 Spacer()
 
                 Button {
-                    state.togglePeek(folder)
+                    state?.togglePeek(folder)
                 } label: {
                     Image(systemName: "xmark")
                         .font(.caption.weight(.semibold))
@@ -382,7 +376,7 @@ struct FolderPeekTray: View {
                         .frame(width: 108)
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            state.select(entry.snapshot)
+                            state?.select(entry.snapshot)
                         }
                     }
                 }

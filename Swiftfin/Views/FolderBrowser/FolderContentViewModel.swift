@@ -26,6 +26,12 @@ final class FolderContentViewModel: ObservableObject {
     @Published
     private(set) var error: Error?
 
+    /// Worked out from the server's items when each page arrives, so the page never
+    /// has to read every item again to sort or filter (that read made sheets slow).
+    private(set) var missingThumbnailIDs: Set<String> = []
+    private(set) var folderIDs: Set<String> = []
+    private var listCache: (key: String, main: [ItemEntry], missing: [ItemEntry])?
+
     /// "Load a folder" applies to folder libraries and plain folders.
     /// Movies and TV pages keep the standard page size.
     private let usesLoadMode: Bool
@@ -40,12 +46,14 @@ final class FolderContentViewModel: ObservableObject {
         let sort: FolderBrowserSort
         let showFolders: Bool
         let loadMode: FolderLoadMode
+        let hiddenKinds: Set<FolderMediaKind>
 
         static var current: LoadOptions {
             LoadOptions(
                 sort: Defaults[.Customization.FolderBrowser.sort],
                 showFolders: Defaults[.Customization.FolderBrowser.showFolders],
-                loadMode: Defaults[.Customization.FolderBrowser.loadMode]
+                loadMode: Defaults[.Customization.FolderBrowser.loadMode],
+                hiddenKinds: FolderMediaKind.hidden
             )
         }
     }
@@ -60,6 +68,7 @@ final class FolderContentViewModel: ObservableObject {
 
         return loadedOptions.sort != current.sort
             || loadedOptions.showFolders != current.showFolders
+            || loadedOptions.hiddenKinds != current.hiddenKinds
             || (usesLoadMode && loadedOptions.loadMode != current.loadMode)
     }
 
@@ -75,6 +84,9 @@ final class FolderContentViewModel: ObservableObject {
         loadTask?.cancel()
         generation += 1
         entries = []
+        missingThumbnailIDs = []
+        folderIDs = []
+        listCache = nil
         nextIndex = 0
         hasMore = false
         error = nil
@@ -108,7 +120,7 @@ final class FolderContentViewModel: ObservableObject {
         }
 
         do {
-            let page: [ItemEntry]
+            let page: Page
             let pageSize: Int?
 
             if let folderID = folder?.id {
@@ -123,9 +135,11 @@ final class FolderContentViewModel: ObservableObject {
 
             guard !Task.isCancelled, generation == self.generation else { return }
 
-            entries.append(contentsOf: page)
-            nextIndex += page.count
-            hasMore = pageSize.map { page.count == $0 } ?? false
+            missingThumbnailIDs.formUnion(page.missingThumbnailIDs)
+            folderIDs.formUnion(page.folderIDs)
+            entries.append(contentsOf: page.entries)
+            nextIndex += page.entries.count
+            hasMore = pageSize.map { page.serverCount == $0 } ?? false
         } catch {
             guard !Task.isCancelled, generation == self.generation else { return }
 
@@ -133,15 +147,55 @@ final class FolderContentViewModel: ObservableObject {
         }
     }
 
-    private func requestLibraries(userSession: UserSession) async throws -> [ItemEntry] {
+    /// Entries for the grid or list and those for the missing-thumbnail section.
+    /// Cached until the entries or the setting change, so redraws cost nothing.
+    func lists(for placement: MissingThumbnailPlacement) -> (main: [ItemEntry], missing: [ItemEntry]) {
+        let key = "\(placement.rawValue)-\(generation)-\(entries.count)"
+
+        if let listCache, listCache.key == key {
+            return (listCache.main, listCache.missing)
+        }
+
+        let main: [ItemEntry]
+        let missing: [ItemEntry]
+
+        switch placement {
+        case .showNormally:
+            main = entries
+            missing = []
+        case .moveToBottom:
+            main = entries.filter { !missingThumbnailIDs.contains($0.itemID) }
+            missing = entries.filter { missingThumbnailIDs.contains($0.itemID) }
+        case .hide:
+            main = entries.filter { !missingThumbnailIDs.contains($0.itemID) }
+            missing = []
+        }
+
+        listCache = (key, main, missing)
+        return (main, missing)
+    }
+
+    private struct Page {
+
+        let entries: [ItemEntry]
+        let missingThumbnailIDs: Set<String>
+        let folderIDs: Set<String>
+        /// Items the server returned, before anything was filtered here
+        let serverCount: Int
+    }
+
+    private func requestLibraries(userSession: UserSession) async throws -> Page {
         let parameters = Paths.GetUserViewsParameters(userID: userSession.user.id)
         let response = try await userSession.send(Paths.getUserViews(parameters: parameters))
 
-        return Self.entries(
-            for: (response.value.items ?? []).filter {
+        let items = response.value.items ?? []
+
+        return Self.page(
+            for: items.filter {
                 CollectionType.supportedCases.contains($0.collectionType ?? .folders)
             },
-            records: response.items
+            records: response.items,
+            serverCount: items.count
         )
     }
 
@@ -149,7 +203,7 @@ final class FolderContentViewModel: ObservableObject {
         of folderID: String,
         pageSize: Int?,
         userSession: UserSession
-    ) async throws -> [ItemEntry] {
+    ) async throws -> Page {
         let showFolders = Defaults[.Customization.FolderBrowser.showFolders]
         let sort = Defaults[.Customization.FolderBrowser.sort]
 
@@ -164,32 +218,56 @@ final class FolderContentViewModel: ObservableObject {
         parameters.userID = userSession.user.id
 
         if showFolders {
-            // Folders first, then by the chosen order
+            // Folders first, then by the chosen order. Hidden kinds never leave the server.
+            parameters.excludeItemTypes = FolderMediaKind.excludedItemTypes
             parameters.sortBy = sort == .name ? [.isFolder, .sortName] : [.isFolder, .dateCreated]
             parameters.sortOrder = sort == .name ? [.descending, .ascending] : [.descending, .descending]
         } else {
+            let mediaTypes = FolderMediaKind.shownMediaTypes
+
+            // Every kind is switched off, so there is nothing to list
+            guard mediaTypes.isNotEmpty else {
+                return Page(entries: [], missingThumbnailIDs: [], folderIDs: [], serverCount: 0)
+            }
+
             parameters.isRecursive = true
             parameters.filters = [.isNotFolder]
-            parameters.mediaTypes = [.video]
+            parameters.mediaTypes = mediaTypes
             parameters.sortBy = sort == .name ? [.sortName] : [.dateCreated]
             parameters.sortOrder = sort == .name ? [.ascending] : [.descending]
         }
 
         let response = try await userSession.send(Paths.getItems(parameters: parameters))
+        let items = response.value.items ?? []
 
-        return Self.entries(for: response.value.items ?? [], records: response.items)
+        return Self.page(for: items, records: response.items, serverCount: items.count)
     }
 
     /// Keeps the server's order, pairing each item with its shared record.
-    private static func entries(for items: [BaseItemDto], records: [ItemRecord]) -> [ItemEntry] {
+    private static func page(for items: [BaseItemDto], records: [ItemRecord], serverCount: Int) -> Page {
         let recordsByID = Dictionary(records.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
 
-        return items.map { item in
-            if let id = item.id, let record = recordsByID[id] {
-                return ItemEntry(item: record)
+        var missing: Set<String> = []
+        var folders: Set<String> = []
+
+        let entries = items.map { item -> ItemEntry in
+            if let id = item.id {
+                if item.isMissingThumbnail {
+                    missing.insert(id)
+                }
+
+                if item.isFolder == true {
+                    folders.insert(id)
+                }
+
+                if let record = recordsByID[id] {
+                    return ItemEntry(item: record)
+                }
             }
 
             return SharedBaseItem(wrappedValue: item).projectedValue
         }
+
+        return Page(entries: entries, missingThumbnailIDs: missing, folderIDs: folders, serverCount: serverCount)
     }
 }

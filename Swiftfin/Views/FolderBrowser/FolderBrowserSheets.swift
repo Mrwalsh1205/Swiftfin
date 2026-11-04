@@ -145,9 +145,7 @@ struct FolderItemActionSheet: View {
                 }
 
                 ActionRow(title: L10n.showInFolderTree, systemImage: "list.bullet.indent") {
-                    withAnimation(.snappy(duration: 0.28)) {
-                        state.reveal(item)
-                    }
+                    state.showInTree(item)
                 }
 
                 ActionRow(title: L10n.goToItem, systemImage: "info.circle") {
@@ -209,9 +207,7 @@ struct FolderActionSheet: View {
                 }
 
                 ActionRow(title: L10n.showInFolderTree, systemImage: "list.bullet.indent") {
-                    withAnimation(.snappy(duration: 0.28)) {
-                        state.reveal(item)
-                    }
+                    state.showInTree(item)
                 }
 
                 ActionRow(title: L10n.reshufflePreview, systemImage: "shuffle") {

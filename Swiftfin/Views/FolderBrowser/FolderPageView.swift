@@ -30,6 +30,8 @@ struct FolderPageView: View {
     private var thumbnailSize
     @Default(.Customization.Library.missingThumbnails)
     private var missingThumbnails
+    @Default(.Customization.FolderBrowser.hiddenMediaKinds)
+    private var hiddenMediaKinds
 
     @EnvironmentObject
     private var state: FolderBrowserState
@@ -57,23 +59,12 @@ struct FolderPageView: View {
         columnCount <= 3
     }
 
-    /// Items shown in the grid or list, after the missing thumbnail setting
-    private var mainEntries: [ItemEntry] {
-        switch missingThumbnails {
-        case .showNormally:
-            viewModel.entries
-        case .moveToBottom, .hide:
-            viewModel.entries.filter { !$0.snapshot.isMissingThumbnail }
-        }
-    }
-
-    private var missingEntries: [ItemEntry] {
-        guard missingThumbnails == .moveToBottom else { return [] }
-
-        return viewModel.entries.filter(\.snapshot.isMissingThumbnail)
-    }
-
     var body: some View {
+        // Precomputed by the view model, so a redraw never reads every item
+        let lists = viewModel.lists(for: missingThumbnails)
+        let mainEntries = lists.main
+        let missingEntries = lists.missing
+
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 header
@@ -83,13 +74,13 @@ struct FolderPageView: View {
                 } else {
                     switch viewMode {
                     case .grid:
-                        grid
+                        grid(mainEntries)
                     case .list:
-                        list
+                        list(mainEntries)
                     }
 
                     if missingEntries.isNotEmpty {
-                        missingSection
+                        missingSection(missingEntries)
                     }
 
                     if viewModel.hasMore {
@@ -117,6 +108,7 @@ struct FolderPageView: View {
         .onChange(of: sort) { viewModel.reload() }
         .onChange(of: showFolders) { viewModel.reload() }
         .onChange(of: loadMode) { viewModel.reload() }
+        .onChange(of: hiddenMediaKinds) { viewModel.reload() }
     }
 
     // MARK: Header
@@ -155,10 +147,12 @@ struct FolderPageView: View {
             }
 
             HStack(spacing: 6) {
-                chip(viewMode.displayTitle)
-                chip(posterType.displayTitle)
-                chip(thumbnailSize.displayTitle)
-                chip(showFolders ? L10n.foldersOn : L10n.foldersOff, isHighlighted: showFolders)
+                Button {
+                    showFolders.toggle()
+                } label: {
+                    chipLabel(showFolders ? L10n.foldersOn : L10n.foldersOff, systemImage: "folder", isOn: showFolders)
+                }
+                .buttonStyle(.plain)
 
                 Spacer(minLength: 0)
 
@@ -167,6 +161,8 @@ struct FolderPageView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
+
+            FolderMediaFilterChips()
         }
         .padding(.horizontal, pagePadding)
     }
@@ -211,22 +207,6 @@ struct FolderPageView: View {
         .buttonStyle(.plain)
     }
 
-    private func chip(_ title: String, isHighlighted: Bool = false) -> some View {
-        Button {
-            state.sheet = .options
-        } label: {
-            Text(title)
-                .font(.caption)
-                .padding(.horizontal, 9)
-                .padding(.vertical, 3)
-                .background(
-                    isHighlighted ? Color.accentColor.opacity(0.2) : Color.secondarySystemBackground,
-                    in: Capsule()
-                )
-                .foregroundStyle(isHighlighted ? Color.accentColor : Color.primary)
-        }
-        .buttonStyle(.plain)
-    }
 
     private var metaLine: String {
         guard let folder else {
@@ -244,7 +224,7 @@ struct FolderPageView: View {
 
     // MARK: Content
 
-    private var grid: some View {
+    private func grid(_ mainEntries: [ItemEntry]) -> some View {
         let rows = stride(from: 0, to: mainEntries.count, by: columnCount).map { start in
             Array(mainEntries[start ..< min(start + columnCount, mainEntries.count)])
         }
@@ -257,7 +237,8 @@ struct FolderPageView: View {
                             entry: entry,
                             displayType: posterType,
                             showsMeta: showsMeta,
-                            showsMoreButton: showsMoreButton
+                            showsMoreButton: showsMoreButton,
+                            isPeeked: state.peekedIDs.contains(entry.itemID)
                         )
                         .frame(maxWidth: .infinity)
                     }
@@ -269,7 +250,7 @@ struct FolderPageView: View {
                     }
                 }
 
-                ForEach(row.filter { $0.snapshot.isFolder == true && state.peekedIDs.contains($0.itemID) }, id: \.id) { entry in
+                ForEach(row.filter { viewModel.folderIDs.contains($0.itemID) && state.peekedIDs.contains($0.itemID) }, id: \.id) { entry in
                     FolderPeekTray(folder: entry.snapshot)
                         .transition(.opacity.combined(with: .move(edge: .top)))
                 }
@@ -279,12 +260,12 @@ struct FolderPageView: View {
         .animation(.easeInOut(duration: 0.2), value: state.peekedIDs)
     }
 
-    private var list: some View {
+    private func list(_ mainEntries: [ItemEntry]) -> some View {
         LazyVStack(alignment: .leading, spacing: 0) {
             ForEach(mainEntries, id: \.id) { entry in
                 FolderBrowserRow(entry: entry)
 
-                if entry.snapshot.isFolder == true, state.peekedIDs.contains(entry.itemID) {
+                if viewModel.folderIDs.contains(entry.itemID), state.peekedIDs.contains(entry.itemID) {
                     FolderPeekTray(folder: entry.snapshot)
                         .padding(.vertical, 6)
                 }
@@ -293,7 +274,7 @@ struct FolderPageView: View {
         .padding(.horizontal, pagePadding - 4)
     }
 
-    private var missingSection: some View {
+    private func missingSection(_ missingEntries: [ItemEntry]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Label(L10n.missingThumbnailsMovedToBottom, systemImage: "photo.badge.exclamationmark")
                 .font(.caption)
@@ -330,5 +311,45 @@ struct FolderPageView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 80)
+    }
+}
+
+/// A capsule label used by the browser's chips
+func chipLabel(_ title: String, systemImage: String, isOn: Bool) -> some View {
+    Label(title, systemImage: systemImage)
+        .font(.caption)
+        .padding(.horizontal, 9)
+        .padding(.vertical, 4)
+        .background(isOn ? Color.accentColor.opacity(0.2) : Color.secondarySystemBackground, in: Capsule())
+        .foregroundStyle(isOn ? Color.accentColor : Color.secondary)
+}
+
+/// Videos / Music / Pictures / Documents switches. Shared by the folder pages and the
+/// Folders tab; switched-off kinds are filtered on the server.
+struct FolderMediaFilterChips: View {
+
+    @Default(.Customization.FolderBrowser.hiddenMediaKinds)
+    private var hiddenMediaKinds
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(FolderMediaKind.allCases, id: \.self) { kind in
+                    let isOn = !hiddenMediaKinds.contains(kind)
+
+                    Button {
+                        if isOn {
+                            hiddenMediaKinds.append(kind)
+                        } else {
+                            hiddenMediaKinds.removeAll { $0 == kind }
+                        }
+                    } label: {
+                        chipLabel(kind.displayTitle, systemImage: isOn ? kind.systemImage : "eye.slash", isOn: isOn)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityValue(isOn ? L10n.shown : L10n.hidden)
+                }
+            }
+        }
     }
 }

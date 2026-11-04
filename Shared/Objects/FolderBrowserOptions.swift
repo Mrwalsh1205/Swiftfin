@@ -7,6 +7,7 @@
 //
 
 import CoreGraphics
+import Defaults
 import Foundation
 import JellyfinAPI
 
@@ -51,19 +52,81 @@ enum HomeStyle: String, CaseIterable, Displayable, Storable {
     }
 }
 
-/// The edge the folder tree slides in from.
-enum FolderTreeSide: String, CaseIterable, Displayable, Storable {
+/// Kinds of files the folder browser and the Folders tab can hide.
+/// Hidden kinds are filtered on the server, so their thumbnails are never downloaded.
+enum FolderMediaKind: String, CaseIterable, Displayable, Storable {
 
-    case left
-    case right
+    case videos
+    case music
+    case pictures
+    case documents
 
     var displayTitle: String {
         switch self {
-        case .left:
-            L10n.left
-        case .right:
-            L10n.right
+        case .videos:
+            L10n.videos
+        case .music:
+            L10n.music
+        case .pictures:
+            L10n.pictures
+        case .documents:
+            L10n.documents
         }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .videos:
+            "film"
+        case .music:
+            "music.note"
+        case .pictures:
+            "photo"
+        case .documents:
+            "doc.text"
+        }
+    }
+
+    var itemTypes: [BaseItemKind] {
+        switch self {
+        case .videos:
+            [.video, .movie, .episode, .musicVideo, .trailer]
+        case .music:
+            [.audio, .musicAlbum, .musicArtist]
+        case .pictures:
+            [.photo]
+        case .documents:
+            [.book, .audioBook]
+        }
+    }
+
+    var mediaType: MediaType {
+        switch self {
+        case .videos:
+            .video
+        case .music:
+            .audio
+        case .pictures:
+            .photo
+        case .documents:
+            .book
+        }
+    }
+
+    static var hidden: Set<FolderMediaKind> {
+        Set(Defaults[.Customization.FolderBrowser.hiddenMediaKinds])
+    }
+
+    /// Item types to leave out of a folder listing, or `nil` when everything is shown
+    static var excludedItemTypes: [BaseItemKind]? {
+        let types = hidden.flatMap(\.itemTypes)
+        return types.isEmpty ? nil : types
+    }
+
+    /// Media types to ask for in a files-only listing
+    static var shownMediaTypes: [MediaType] {
+        let hiddenKinds = Self.hidden
+        return allCases.filter { !hiddenKinds.contains($0) }.map(\.mediaType)
     }
 }
 

@@ -328,6 +328,13 @@ struct FolderPreviewImage<Fallback: View>: View {
         self.size = size
         self.pipeline = pipeline
         self.fallback = fallback()
+
+        // Start on the preview this folder showed last, so tiles don't blank or reshuffle as they reappear
+        if let remembered = FolderPreviewMemory.lastShown(for: folderID) {
+            _image = State(initialValue: remembered.image)
+            _imageFolderID = State(initialValue: folderID)
+            _imageVideoID = State(initialValue: remembered.videoID)
+        }
     }
 
     var body: some View {
@@ -368,8 +375,9 @@ struct FolderPreviewImage<Fallback: View>: View {
     /// Cancelled when the cell scrolls away or is reused for another folder.
     private func rotate() async {
         if imageFolderID != folderID {
-            image = nil
-            imageVideoID = nil
+            let remembered = FolderPreviewMemory.lastShown(for: folderID)
+            image = remembered?.image
+            imageVideoID = remembered?.videoID
             imageFolderID = folderID
             position = nil
             videoCount = 0
@@ -380,7 +388,8 @@ struct FolderPreviewImage<Fallback: View>: View {
               !Task.isCancelled
         else { return }
 
-        let videos = pick.videos.shuffled()
+        // One shuffled order per folder per launch, so the same preview comes back
+        let videos = FolderPreviewMemory.order(of: pick.videos, for: folderID)
 
         guard videos.isNotEmpty else { return }
 
@@ -390,6 +399,10 @@ struct FolderPreviewImage<Fallback: View>: View {
             guard let shownIndex = await showFirstLoadable(in: videos, from: index) else { return }
 
             index = shownIndex
+        } else {
+            // Already showing the remembered preview
+            position = index
+            videoCount = videos.count
         }
 
         guard videos.count > 1, !reduceMotion else { return }
@@ -461,6 +474,10 @@ struct FolderPreviewImage<Fallback: View>: View {
 
         guard !Task.isCancelled else { return false }
 
+        FolderPreviewMemory.remember(loadedImage, videoID: video.id, for: folderID)
+
+        guard video.id != imageVideoID || image == nil else { return true }
+
         withAnimation(.easeInOut(duration: folderPreviewCrossfadeDuration)) {
             image = loadedImage
             imageVideoID = video.id
@@ -504,5 +521,55 @@ private struct FolderPreviewIndicators: View {
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+    }
+}
+
+// MARK: - Memory
+
+/// The preview each folder showed last and its rotation order, kept in memory for the
+/// launch. NSCache is thread safe and drops entries under memory pressure.
+final class FolderPreviewMemory {
+
+    private final class Shown {
+
+        let image: UIImage
+        let videoID: String
+
+        init(image: UIImage, videoID: String) {
+            self.image = image
+            self.videoID = videoID
+        }
+    }
+
+    private static let shown: NSCache<NSString, Shown> = {
+        let cache = NSCache<NSString, Shown>()
+        cache.countLimit = 400
+        return cache
+    }()
+
+    private static let orders = NSCache<NSString, NSArray>()
+
+    static func lastShown(for folderID: String) -> (image: UIImage, videoID: String)? {
+        shown.object(forKey: folderID as NSString).map { ($0.image, $0.videoID) }
+    }
+
+    static func remember(_ image: UIImage, videoID: String, for folderID: String) {
+        shown.setObject(Shown(image: image, videoID: videoID), forKey: folderID as NSString)
+    }
+
+    /// The folder's videos in a shuffled order that stays the same for this launch
+    static func order(of videos: [FolderPreviewPick.Video], for folderID: String) -> [FolderPreviewPick.Video] {
+        let key = folderID as NSString
+
+        if let saved = orders.object(forKey: key) as? [String],
+           Set(saved) == Set(videos.map(\.id))
+        {
+            let byID = Dictionary(videos.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+            return saved.compactMap { byID[$0] }
+        }
+
+        let shuffled = videos.shuffled()
+        orders.setObject(shuffled.map(\.id) as NSArray, forKey: key)
+        return shuffled
     }
 }

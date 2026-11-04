@@ -358,6 +358,8 @@ internal enum L10n {
   internal static let codecTag = L10n.tr("Localizable", "codecTag", fallback: "Codec Tag")
   /// Codec Time Base
   internal static let codecTimeBase = L10n.tr("Localizable", "codecTimeBase", fallback: "Codec Time Base")
+  /// Collapse all
+  internal static let collapseAll = L10n.tr("Localizable", "collapseAll", fallback: "Collapse all")
   /// Collection
   internal static let collection = L10n.tr("Localizable", "collection", fallback: "Collection")
   /// Collection folder
@@ -650,6 +652,8 @@ internal enum L10n {
   internal static let dismiss = L10n.tr("Localizable", "dismiss", fallback: "Dismiss")
   /// Display order
   internal static let displayOrder = L10n.tr("Localizable", "displayOrder", fallback: "Display order")
+  /// Documents
+  internal static let documents = L10n.tr("Localizable", "documents", fallback: "Documents")
   /// Done
   internal static let done = L10n.tr("Localizable", "done", fallback: "Done")
   /// Double touch
@@ -926,10 +930,10 @@ internal enum L10n {
   internal static let home = L10n.tr("Localizable", "home", fallback: "Home")
   /// Home style
   internal static let homeStyle = L10n.tr("Localizable", "homeStyle", fallback: "Home style")
-  /// Home keeps Continue Watching, Recently Added and My Media. The button at the top opens the folder tree; folders open as library pages.
-  internal static let homeStyleClassicDescription = L10n.tr("Localizable", "homeStyleClassicDescription", fallback: "Home keeps Continue Watching, Recently Added and My Media. The button at the top opens the folder tree; folders open as library pages.")
-  /// Home is a folder browser with breadcrumbs, and the folder tree sits on a narrow toolbar at the chosen edge.
-  internal static let homeStyleFolderBrowserDescription = L10n.tr("Localizable", "homeStyleFolderBrowserDescription", fallback: "Home is a folder browser with breadcrumbs, and the folder tree sits on a narrow toolbar at the chosen edge.")
+  /// Home keeps Continue Watching, Recently Added and My Media. The folder tree has its own Folders tab.
+  internal static let homeStyleClassicDescription = L10n.tr("Localizable", "homeStyleClassicDescription", fallback: "Home keeps Continue Watching, Recently Added and My Media. The folder tree has its own Folders tab.")
+  /// Home is a folder browser with breadcrumbs and filters. The whole folder tree has its own Folders tab.
+  internal static let homeStyleFolderBrowserDescription = L10n.tr("Localizable", "homeStyleFolderBrowserDescription", fallback: "Home is a folder browser with breadcrumbs and filters. The whole folder tree has its own Folders tab.")
   /// Horizontal pan
   internal static let horizontalPan = L10n.tr("Localizable", "horizontalPan", fallback: "Horizontal pan")
   /// Horizontal swipe
@@ -1146,6 +1150,8 @@ internal enum L10n {
   internal static let liveTVRecordingManagement = L10n.tr("Localizable", "liveTVRecordingManagement", fallback: "Live TV recording management")
   /// Load a folder
   internal static let loadAFolder = L10n.tr("Localizable", "loadAFolder", fallback: "Load a folder")
+  /// Loading files…
+  internal static let loadingFiles = L10n.tr("Localizable", "loadingFiles", fallback: "Loading files…")
   /// Local
   internal static let local = L10n.tr("Localizable", "local", fallback: "Local")
   /// Local servers
@@ -1464,6 +1470,8 @@ internal enum L10n {
   internal static let pickedNewPreviews = L10n.tr("Localizable", "pickedNewPreviews", fallback: "Picked new preview videos")
   /// Picture in Picture
   internal static let pictureInPicture = L10n.tr("Localizable", "pictureInPicture", fallback: "Picture in Picture")
+  /// Pictures
+  internal static let pictures = L10n.tr("Localizable", "pictures", fallback: "Pictures")
   /// Pin
   internal static let pin = L10n.tr("Localizable", "pin", fallback: "Pin")
   /// Pinch
@@ -1906,12 +1914,22 @@ internal enum L10n {
   internal static let showFoldersDescription = L10n.tr("Localizable", "showFoldersDescription", fallback: "On: browse folder by folder. Off: a flat list of every video.")
   /// Show in folder tree
   internal static let showInFolderTree = L10n.tr("Localizable", "showInFolderTree", fallback: "Show in folder tree")
+  /// Show in folders
+  internal static let showKinds = L10n.tr("Localizable", "showKinds", fallback: "Show in folders")
+  /// Switched-off kinds are filtered on the server, so their thumbnails never download. Also in each folder's header and on the Folders tab.
+  internal static let showKindsDescription = L10n.tr("Localizable", "showKindsDescription", fallback: "Switched-off kinds are filtered on the server, so their thumbnails never download. Also in each folder\'s header and on the Folders tab.")
   /// Show missing episodes
   internal static let showMissingEpisodes = L10n.tr("Localizable", "showMissingEpisodes", fallback: "Show missing episodes")
   /// Show missing seasons
   internal static let showMissingSeasons = L10n.tr("Localizable", "showMissingSeasons", fallback: "Show missing seasons")
+  /// Show more (%@ shown)
+  internal static func showMoreFiles(_ p1: Any) -> String {
+    return L10n.tr("Localizable", "showMoreFiles", String(describing: p1), fallback: "Show more (%@ shown)")
+  }
   /// Show My Media
   internal static let showMyMedia = L10n.tr("Localizable", "showMyMedia", fallback: "Show My Media")
+  /// Shown
+  internal static let shown = L10n.tr("Localizable", "shown", fallback: "Shown")
   /// Show normally
   internal static let showNormally = L10n.tr("Localizable", "showNormally", fallback: "Show normally")
   /// Show on Skip Back

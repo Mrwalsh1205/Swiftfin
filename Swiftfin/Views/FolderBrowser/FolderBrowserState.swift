@@ -32,31 +32,52 @@ enum FolderBrowserSheet: Identifiable {
     }
 }
 
-/// Where the folder browser is and what it shows, shared by the page, the folder pane and the rail.
+/// The sheet shown over a folder page. Kept apart from `FolderBrowserState`, so opening
+/// or closing a sheet redraws only the sheet, never the page and its tiles.
+@MainActor
+final class FolderSheetModel: ObservableObject {
+
+    @Published
+    var sheet: FolderBrowserSheet?
+}
+
+/// How a folder chosen in the browser opens
+enum FolderOpenStyle {
+
+    /// The browser moves into the folder
+    case inPlace
+    /// A full-screen folder page is pushed, as from the Folders tab
+    case browserPage
+}
+
+extension EnvironmentValues {
+
+    /// The browser state, for tiles. Reading it doesn't subscribe to changes,
+    /// so a change of folder or peek redraws the page once instead of every tile.
+    @Entry
+    var folderBrowserState: FolderBrowserState? = nil
+}
+
+/// Where the folder browser is and what it shows, shared by the page and its sheets.
 @MainActor
 final class FolderBrowserState: ObservableObject {
 
     /// The library and folders leading to the shown folder. Empty shows the libraries.
     @Published
     var path: [BaseItemDto] = []
-    @Published
-    var isTreeOpen = false
-    /// Folders opened in the folder pane
-    @Published
-    var expandedIDs: Set<String> = []
-    /// Highlighted in the folder pane after "Show in folder tree"
-    @Published
-    var highlightedID: String?
-    @Published
-    var sheet: FolderBrowserSheet?
     /// Folders peeked into with a double tap
     @Published
     var peekedIDs: Set<String> = []
-    @Published
-    var treeSearch = ""
     /// Bumped to make the shown folder load again
     @Published
     private(set) var pageReloadToken = 0
+
+    let sheets = FolderSheetModel()
+
+    var sheet: FolderBrowserSheet? {
+        get { sheets.sheet }
+        set { sheets.sheet = newValue }
+    }
 
     /// One loader per folder, kept so going back shows the folder at once
     private var viewModels: [String: FolderContentViewModel] = [:]
@@ -65,12 +86,17 @@ final class FolderBrowserState: ObservableObject {
     var playAction: PlayMediaAction?
     var router: Router.Wrapper?
     var toastProxy: ToastProxy?
+    /// Switches to the Folders tab
+    var showFoldersTab: (() -> Void)?
 
-    /// Classic Home has no folder page of its own, so folders open as library pages.
-    let opensFoldersAsPages: Bool
+    let openStyle: FolderOpenStyle
+    /// A folder page pushed from the Folders tab, rather than the Home tab's root
+    let isPushed: Bool
 
-    init(opensFoldersAsPages: Bool = false) {
-        self.opensFoldersAsPages = opensFoldersAsPages
+    init(openStyle: FolderOpenStyle = .inPlace, startPath: [BaseItemDto] = [], isPushed: Bool = false) {
+        self.openStyle = openStyle
+        self.path = startPath
+        self.isPushed = isPushed
     }
 
     var currentFolder: BaseItemDto? {
@@ -131,10 +157,8 @@ final class FolderBrowserState: ObservableObject {
     func open(_ folder: BaseItemDto) {
         guard let id = folder.id else { return }
 
-        if opensFoldersAsPages {
-            isTreeOpen = false
-            highlightedID = nil
-            route(to: .library(library: ItemLibrary(parent: folder, filters: .default), displayTitle: folder.displayTitle))
+        if openStyle == .browserPage {
+            route(to: .folderBrowserPage(folder: folder))
             return
         }
 
@@ -148,12 +172,6 @@ final class FolderBrowserState: ObservableObject {
             path.append(folder)
         }
 
-        for folder in path {
-            if let id = folder.id {
-                expandedIDs.insert(id)
-            }
-        }
-
         peekedIDs = []
         sheet = nil
     }
@@ -165,7 +183,7 @@ final class FolderBrowserState: ObservableObject {
         } else if item.canBePlayed {
             play(item)
         } else {
-            router?.route(to: .item(item: item))
+            route(to: .item(item: item))
         }
     }
 
@@ -177,7 +195,6 @@ final class FolderBrowserState: ObservableObject {
 
         let hadSheet = sheet != nil
         sheet = nil
-        isTreeOpen = false
 
         // The player can't present while a sheet is still closing
         guard hadSheet else {
@@ -224,17 +241,6 @@ final class FolderBrowserState: ObservableObject {
         }
     }
 
-    /// A folder tapped in the tree. The folder browser keeps the pane open and moves behind it;
-    /// Classic rows pushes a page, so the pane closes.
-    func openFromTree(_ folder: BaseItemDto) {
-        highlightedID = nil
-        open(folder)
-
-        if opensFoldersAsPages {
-            isTreeOpen = false
-        }
-    }
-
     func togglePeek(_ folder: BaseItemDto) {
         guard let id = folder.id else { return }
 
@@ -245,33 +251,17 @@ final class FolderBrowserState: ObservableObject {
         }
     }
 
-    /// Opens the folder pane with every folder leading to `item` open, and highlights it.
-    func reveal(_ item: BaseItemDto) {
-        let folderID = item.isFolder == true ? item.id : item.parentID
-
-        if let folderID {
-            for folder in FolderIndex.shared.path(to: folderID) {
-                if let id = folder.id {
-                    expandedIDs.insert(id)
-                }
-            }
-        }
-
-        if item.isFolder != true {
-            Defaults[.Customization.FolderBrowser.treeShowsFiles] = true
-        }
-
-        treeSearch = ""
-        highlightedID = item.id
+    /// Opens the Folders tab with every folder leading to `item` open, and highlights it.
+    func showInTree(_ item: BaseItemDto) {
         sheet = nil
-        isTreeOpen = true
+        FolderTreeModel.shared.reveal(item)
+        showFoldersTab?()
     }
 
     /// Routes once the current sheet has finished closing, since a route can't present over it.
     func route(to route: NavigationRoute) {
         let hadSheet = sheet != nil
         sheet = nil
-        isTreeOpen = false
 
         guard hadSheet else {
             router?.route(to: route)

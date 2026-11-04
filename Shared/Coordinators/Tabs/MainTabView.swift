@@ -34,6 +34,7 @@ struct MainTabView: View {
         // Swiftfin+: Home is the folder browser, and Settings has its own tab
         TabCoordinator {
             TabItem.folderBrowser
+            TabItem.folderTree
             TabItem.search
             TabItem.media
             TabItem.settingsTab
@@ -138,6 +139,11 @@ struct MainTabView: View {
                     await tabCoordinator.route(to: route)
                 }
             }
+            #if os(iOS)
+            .onReceive(NotificationCenter.default.publisher(for: .swiftfinPlusShowFoldersTab)) { _ in
+                tabCoordinator.selectedTabID = TabItem.folderTreeID
+            }
+            #endif
             #if os(tvOS)
             .background(alignment: .top) {
                 FocusedPosterCinematicBackgroundView()

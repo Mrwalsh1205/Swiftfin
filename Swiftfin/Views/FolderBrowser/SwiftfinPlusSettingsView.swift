@@ -17,8 +17,8 @@ struct SwiftfinPlusSettingsView: View {
     // Home
     @Default(.Customization.FolderBrowser.homeStyle)
     private var homeStyle
-    @Default(.Customization.FolderBrowser.treeSide)
-    private var treeSide
+    @Default(.Customization.FolderBrowser.hiddenMediaKinds)
+    private var hiddenMediaKinds
 
     // Libraries
     @Default(.Customization.FolderBrowser.viewMode)
@@ -108,12 +108,15 @@ struct SwiftfinPlusSettingsView: View {
                 }
             }
 
-            Picker(L10n.folderTreeSide, selection: $treeSide) {
-                ForEach(FolderTreeSide.allCases, id: \.self) {
-                    Text($0.displayTitle).tag($0)
-                }
+            VStack(alignment: .leading, spacing: 6) {
+                Text(L10n.showKinds)
+
+                FolderMediaFilterChips()
+
+                Text(L10n.showKindsDescription)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-            .pickerStyle(.segmented)
         } header: {
             Text(L10n.home)
         } footer: {
@@ -394,7 +397,7 @@ struct SwiftfinPlusSettingsView: View {
 
     private func resetAll() {
         reset(.Customization.FolderBrowser.homeStyle)
-        reset(.Customization.FolderBrowser.treeSide)
+        reset(.Customization.FolderBrowser.hiddenMediaKinds)
         reset(.Customization.FolderBrowser.viewMode)
         reset(.Customization.FolderBrowser.posterType)
         reset(.Customization.FolderBrowser.sort)

@@ -249,9 +249,9 @@ extension Defaults.Keys {
                 UserKey("swiftfinPlusHomeStyle", default: .folderBrowser)
             }
 
-            /// Which edge the folder tree slides in from
-            static var treeSide: Key<FolderTreeSide> {
-                UserKey("swiftfinPlusFolderTreeSide", default: .right)
+            /// Kinds of files hidden in the folder browser and the Folders tab
+            static var hiddenMediaKinds: Key<[FolderMediaKind]> {
+                UserKey("folderBrowserHiddenMediaKinds", default: [])
             }
 
             static var viewMode: Key<FolderBrowserViewMode> {
@@ -283,7 +283,7 @@ extension Defaults.Keys {
             }
 
             static var loadMode: Key<FolderLoadMode> {
-                UserKey("folderBrowserLoadMode", default: .all)
+                UserKey("folderBrowserLoadMode", default: .twoHundred)
             }
 
             /// How deep each folder is indexed, keyed by folder ID. Folders not listed index every level.
